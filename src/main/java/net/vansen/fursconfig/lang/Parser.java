@@ -5,14 +5,27 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Parser for FursConfig
+ */
 public class Parser {
     private final List<String> tokens;
     private int pos = 0;
 
+    /**
+     * Creates a new Parser
+     *
+     * @param lexer the lexer to use
+     */
     public Parser(@NotNull Lexer lexer) {
         this.tokens = lexer.tokenize();
     }
 
+    /**
+     * Parses the given tokens into the given parent node
+     *
+     * @param parent the parent node to parse into
+     */
     public void parse(@NotNull Node parent) {
         while (pos < tokens.size()) {
             String key = tokens.get(pos++);

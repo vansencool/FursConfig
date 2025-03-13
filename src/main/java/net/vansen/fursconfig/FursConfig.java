@@ -17,6 +17,9 @@ import java.util.List;
 @SuppressWarnings({"unused", "unchecked"})
 public class FursConfig {
 
+    /**
+     * The root, top-most node of the parsed configuration tree.
+     */
     private Node root = new Node();
 
     /**
@@ -330,6 +333,16 @@ public class FursConfig {
         FursConfig config = create();
         config.root = node;
         return config;
+    }
+
+    /**
+     * Checks if the given path exists.
+     *
+     * @param path the path to check
+     * @return true if the path exists, false otherwise
+     */
+    public boolean hasPath(@NotNull String path) {
+        return root.get(path) != null;
     }
 
     /**
