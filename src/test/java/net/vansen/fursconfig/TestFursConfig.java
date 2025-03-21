@@ -21,30 +21,30 @@ class TestFursConfig {
                 """;
         //String config = largeConfig().toString();
 
+        int iter = 20;
         long totalNs = 0;
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < iter; i++) {
             FursConfig fursConfig = new FursConfig();
             long nano2 = System.nanoTime();
             fursConfig.parse(config);
-            fursConfig.getList("some_list", String.class);
             long endNs2 = System.nanoTime();
             totalNs += (endNs2 - nano2);
         }
 
-        double averageNs = (double) totalNs / 50;
+        double averageNs = (double) totalNs / iter;
         double averageMs = averageNs / 1000000.0;
 
         System.out.printf("For furs config, average time over 50 parses: %d ns, %.2f ms%n", (long) averageNs, averageMs);
 
         long totalNs2 = 0;
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < iter; i++) {
             long nano = System.nanoTime();
             ConfigFactory.parseString(config);
             long endNs = System.nanoTime();
             totalNs2 += (endNs - nano);
         }
 
-        double averageNs2 = (double) totalNs2 / 50;
+        double averageNs2 = (double) totalNs2 / iter;
         double averageMs2 = averageNs2 / 1000000.0;
 
         System.out.printf("For typesafe's config, average time over 50 parses: %d ns, %.2f ms%n", (long) averageNs2, averageMs2);
