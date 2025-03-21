@@ -16,7 +16,7 @@ repositories {
 
 ```groovy
 dependencies {
-    implementation 'com.github.vansencool:FursConfig:1.0.1'
+    implementation 'com.github.vansencool:FursConfig:1.0.2'
 }
 ```
 
@@ -33,7 +33,7 @@ dependencies {
 <dependency>
     <groupId>com.github.vansencool</groupId>
     <artifactId>FursConfig</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
 </dependency>
 ```
 
@@ -41,7 +41,7 @@ dependencies {
 
 ## Features
 
-- **Branches**: Organize configurations with a hierarchical structure, we call them "branches" (or "nodes" in code terms).
+- **Branches**: Hierarchical structure, we call them "branches" (or "nodes").
 - **Multiple Data Types**: Supports `list`, `float`, `double`, `int`, `long`, and `string`.
 - **Comment Support**: Define comments using `//` or `#`.
 - **Optimized Parsing**: Up to **90% faster** compared to Typesafe Config.
