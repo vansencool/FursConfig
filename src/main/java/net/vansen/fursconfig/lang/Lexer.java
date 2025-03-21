@@ -1,5 +1,7 @@
 package net.vansen.fursconfig.lang;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -19,8 +21,8 @@ public class Lexer {
      *
      * @param input the input string to tokenize
      */
-    public Lexer(String input) {
-        this.input = input;
+    public Lexer(@NotNull String input) {
+        this.input = removeComments(input);
     }
 
     /**
@@ -36,5 +38,19 @@ public class Lexer {
             if (!token.trim().isEmpty()) tokens.add(token);
         }
         return tokens;
+    }
+
+    @SuppressWarnings("StringConcatenationInLoop")
+    private static String removeComments(@NotNull String input) {
+        String result = "";
+        String[] lines = input.split("\n");
+
+        for (String line : lines) {
+            int commentIndex = line.indexOf("//");
+            result += (commentIndex != -1) ? line.substring(0, commentIndex) : line;
+            result += "\n";
+        }
+
+        return result;
     }
 }
