@@ -16,7 +16,7 @@ repositories {
 
 ```groovy
 dependencies {
-    implementation 'com.github.vansencool:FursConfig:1.0.2'
+    implementation 'com.github.vansencool:FursConfig:1.0.3'
 }
 ```
 
@@ -33,7 +33,7 @@ dependencies {
 <dependency>
     <groupId>com.github.vansencool</groupId>
     <artifactId>FursConfig</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
 </dependency>
 ```
 
