@@ -101,10 +101,10 @@ public class FursConfig {
      *
      * @param path the path to the value to retrieve
      * @return the double value at the given path
-     * @throws RuntimeException if the value cannot be cast to a double
+     * @throws NumberFormatException if the value cannot be parsed to a double
      */
     public double getDouble(@NotNull String path) {
-        return cast(path, Double.class);
+        return Double.parseDouble(root.get(path).toString());
     }
 
     /**
@@ -112,10 +112,10 @@ public class FursConfig {
      *
      * @param path the path to the value to retrieve
      * @return the float value at the given path
-     * @throws RuntimeException if the value cannot be cast to a float
+     * @throws NumberFormatException if the value cannot be parsed to a float
      */
     public float getFloat(@NotNull String path) {
-        return Float.parseFloat(String.valueOf(cast(path, Double.class)));
+        return Float.parseFloat(String.valueOf(root.get(path)));
     }
 
     /**
@@ -123,10 +123,10 @@ public class FursConfig {
      *
      * @param path the path to the value to retrieve
      * @return the int value at the given path
-     * @throws RuntimeException if the value cannot be cast to an int
+     * @throws NumberFormatException if the value cannot be parsed to an int
      */
     public int getInt(@NotNull String path) {
-        return cast(path, Integer.class);
+        return Integer.parseInt(root.get(path).toString());
     }
 
     /**
@@ -134,10 +134,10 @@ public class FursConfig {
      *
      * @param path the path to the value to retrieve
      * @return the long value at the given path
-     * @throws RuntimeException if the value cannot be cast to a long
+     * @throws NumberFormatException if the value cannot be parsed to a long
      */
     public long getLong(@NotNull String path) {
-        return cast(path, Long.class);
+        return Long.parseLong(root.get(path).toString());
     }
 
     /**
@@ -145,10 +145,9 @@ public class FursConfig {
      *
      * @param path the path to the value to retrieve
      * @return the boolean value at the given path
-     * @throws RuntimeException if the value cannot be cast to a boolean
      */
     public boolean getBoolean(@NotNull String path) {
-        return cast(path, Boolean.class);
+        return Boolean.parseBoolean(root.get(path).toString());
     }
 
     /**
@@ -156,10 +155,9 @@ public class FursConfig {
      *
      * @param path the path to the value to retrieve
      * @return the string value at the given path
-     * @throws RuntimeException if the value cannot be cast to a string
      */
     public String getString(@NotNull String path) {
-        return cast(path, String.class);
+        return String.valueOf(root.get(path));
     }
 
     /**
@@ -201,6 +199,17 @@ public class FursConfig {
     }
 
     /**
+     * Retrieves the node at the given path.
+     *
+     * @param path the path to retrieve from
+     * @return the node at the given path
+     * @throws RuntimeException if the value cannot be cast to a node
+     */
+    public Node getNode(@NotNull String path) {
+        return cast(path, Node.class);
+    }
+
+    /**
      * Retrieves the value at the given path, or the default value if not found.
      *
      * @param path         the path to the value to retrieve
@@ -220,7 +229,12 @@ public class FursConfig {
      * @return the double value at the given path, or the default value if not found
      */
     public double getDouble(@NotNull String path, double defaultValue) {
-        return cast(path, Double.class, defaultValue);
+        try {
+            return getDouble(path);
+        }
+        catch (Exception e) {
+            return defaultValue;
+        }
     }
 
     /**
@@ -231,7 +245,6 @@ public class FursConfig {
      * @return the float value at the given path, or the default value if not found
      */
     public float getFloat(@NotNull String path, float defaultValue) {
-        // Couldn't figure out a way to do this in a single line
         try {
             return getFloat(path);
         } catch (RuntimeException e) {
@@ -247,7 +260,12 @@ public class FursConfig {
      * @return the int value at the given path, or the default value if not found
      */
     public int getInt(@NotNull String path, int defaultValue) {
-        return cast(path, Integer.class, defaultValue);
+        try {
+            return getInt(path);
+        }
+        catch (Exception e) {
+            return defaultValue;
+        }
     }
 
     /**
@@ -258,7 +276,12 @@ public class FursConfig {
      * @return the long value at the given path, or the default value if not found
      */
     public long getLong(@NotNull String path, long defaultValue) {
-        return cast(path, Long.class, defaultValue);
+        try {
+            return getLong(path);
+        }
+        catch (Exception e) {
+            return defaultValue;
+        }
     }
 
     /**
@@ -269,7 +292,12 @@ public class FursConfig {
      * @return the boolean value at the given path, or the default value if not found
      */
     public boolean getBoolean(@NotNull String path, boolean defaultValue) {
-        return cast(path, Boolean.class, defaultValue);
+        try {
+            return getBoolean(path);
+        }
+        catch (Exception e) {
+            return defaultValue;
+        }
     }
 
     /**
@@ -280,7 +308,12 @@ public class FursConfig {
      * @return the string value at the given path, or the default value if not found
      */
     public String getString(@NotNull String path, @Nullable String defaultValue) {
-        return cast(path, String.class, defaultValue);
+        try {
+            return getString(path);
+        }
+        catch (Exception e) {
+            return defaultValue;
+        }
     }
 
     /**
@@ -291,7 +324,12 @@ public class FursConfig {
      * @return the list value at the given path, or the default value if not found
      */
     public List<Object> getList(@NotNull String path, @Nullable List<Object> defaultValue) {
-        return cast(path, List.class, defaultValue);
+        try {
+            return getList(path);
+        }
+        catch (Exception e) {
+            return defaultValue;
+        }
     }
 
     /**
@@ -304,7 +342,12 @@ public class FursConfig {
      * @return the list value at the given path, or the default value if not found
      */
     public <T> List<T> getList(@NotNull String path, @NotNull Class<T> clazz, @Nullable List<T> defaultValue) {
-        return (List<T>) cast(path, List.class, defaultValue);
+        try {
+            return getList(path, clazz);
+        }
+        catch (Exception e) {
+            return defaultValue;
+        }
     }
 
     /**
@@ -315,7 +358,29 @@ public class FursConfig {
      * @return the config (branch) at the given path, or the default value if not found
      */
     public FursConfig getFursConfig(@NotNull String path, @NotNull FursConfig defaultValue) {
-        Node node = cast(path, Node.class, defaultValue.root);
+        try {
+            return getFursConfig(path);
+        }
+        catch (Exception e) {
+            return defaultValue;
+        }
+    }
+
+    /**
+     * Retrieves the config (branch) at the given path, or the default value if not found.
+     *
+     * @param path         the path to retrieve from
+     * @param defaultValue the default value to return if not found
+     * @return the config (branch) at the given path, or the default value if not found
+     */
+    public FursConfig getFursConfig(@NotNull String path, @NotNull Node defaultValue) {
+        Node node;
+        try {
+            node = getNode(path);
+        }
+        catch (Exception e) {
+            node = defaultValue;
+        }
         FursConfig config = create();
         config.root = node;
         return config;
@@ -328,11 +393,13 @@ public class FursConfig {
      * @param defaultValue the default value to return if not found
      * @return the config (branch) at the given path, or the default value if not found
      */
-    public FursConfig getFursConfig(@NotNull String path, @NotNull Node defaultValue) {
-        Node node = cast(path, Node.class, defaultValue);
-        FursConfig config = create();
-        config.root = node;
-        return config;
+    public Node getNode(@NotNull String path, @NotNull Node defaultValue) {
+        try {
+            return getNode(path);
+        }
+        catch (Exception e) {
+            return defaultValue;
+        }
     }
 
     /**
@@ -355,14 +422,6 @@ public class FursConfig {
         Parser parser = new Parser(lexer);
         root.children.clear();
         parser.parse(root);
-    }
-
-    private <T> T cast(@NotNull String path, @NotNull Class<T> clazz, @Nullable T defaultValue) {
-        try {
-            return clazz.cast(root.get(path));
-        } catch (ClassCastException e) {
-            return defaultValue;
-        }
     }
 
     private <T> T cast(@NotNull String path, @NotNull Class<T> clazz) {
