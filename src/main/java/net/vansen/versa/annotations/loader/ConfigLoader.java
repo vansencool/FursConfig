@@ -249,17 +249,13 @@ public final class ConfigLoader {
 
             ValueBuilder vb = new ValueBuilder().name(name);
 
-            switch (def) {
-                case String s -> vb.string(s);
-                case Integer i -> vb.intVal(i);
-                case Long l -> vb.longVal(l);
-                case Boolean b -> vb.bool(b);
-                case Double d -> vb.doubleVal(d);
-                case Float fv -> vb.floatVal(fv);
-                default -> {
-                    continue;
-                }
-            }
+            if (def instanceof String s) vb.string(s);
+            else if (def instanceof Integer i) vb.intVal(i);
+            else if (def instanceof Long l) vb.longVal(l);
+            else if (def instanceof Boolean b) vb.bool(b);
+            else if (def instanceof Double d) vb.doubleVal(d);
+            else if (def instanceof Float fv) vb.floatVal(fv);
+            else continue;
 
             root.add(vb);
             root.emptyLine();
