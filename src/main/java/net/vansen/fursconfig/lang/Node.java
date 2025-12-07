@@ -47,6 +47,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *   </dd>
  * </dl>
  */
+@Deprecated
 public class Node {
 
     /**

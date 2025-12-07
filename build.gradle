@@ -4,10 +4,11 @@ plugins {
 }
 
 group = 'net.vansen'
-version = '1.0.3'
+version = '2.0.0'
 
 repositories {
     mavenCentral()
+    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
@@ -34,7 +35,7 @@ publishing {
     publications {
         create("mavenJava", MavenPublication.class) {
             from components.java
-
+            artifactId = "Versa"
             artifact tasks.sourcesJar
             artifact tasks.javadocJar
         }

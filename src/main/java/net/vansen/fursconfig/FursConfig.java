@@ -15,6 +15,7 @@ import java.util.List;
  * Main class for FursConfig
  */
 @SuppressWarnings({"unused", "unchecked"})
+@Deprecated
 public class FursConfig {
 
     /**

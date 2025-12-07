@@ -8,6 +8,7 @@ import java.util.List;
 /**
  * Parser for FursConfig
  */
+@Deprecated
 public class Parser {
     private final List<String> tokens;
     private int pos = 0;

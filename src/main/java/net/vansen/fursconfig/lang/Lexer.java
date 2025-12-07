@@ -10,11 +10,11 @@ import java.util.regex.Pattern;
 /**
  * Lexer for FursConfig
  */
-public class Lexer {
+@Deprecated
+public record Lexer(String input) {
 
     private static final Pattern TOKEN_PATTERN = Pattern.compile(
             "-?\\d+\\.\\d+|-?\\d+|\\w+|\"[^\"]*\"|=|\\{|}|\\[|]|,|\\s+");
-    private final String input;
 
     /**
      * Initializes the lexer
