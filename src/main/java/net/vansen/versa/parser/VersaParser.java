@@ -285,7 +285,7 @@ public class VersaParser {
             Node n = new VersaParser(wrap).parse();
             Value v = new Value();
             v.type = ValueType.LIST_OF_BRANCHES;
-            v.branchList = Collections.singletonList(n.children.getFirst());
+            v.branchList = Collections.singletonList(n.children.get(0));
             return v;
         }
         return parseValueFromString(s);
