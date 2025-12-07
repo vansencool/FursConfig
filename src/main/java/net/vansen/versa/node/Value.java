@@ -82,9 +82,8 @@ public class Value {
     /**
      * Returns the underlying Java representation of this Value.
      * <p>
-     * Numbers become Long/Double, strings return String, lists return List<Value>,
-     * and LIST_OF_BRANCHES returns List<Node>.
-     * Useful when you want the actual stored value without checking type.
+     * Numbers become Long/Double, strings return String, lists return {@code List<Value>},
+     * and LIST_OF_BRANCHES returns {@code List<Node>}.
      */
     public Object raw() {
         return switch (type) {

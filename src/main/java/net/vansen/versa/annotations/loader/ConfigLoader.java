@@ -28,7 +28,7 @@ import java.util.Map;
  * <p>
  * <p><b>Supports:</b></p>
  * <ul>
- *     <li>Primitive types & wrappers (String, int, long, boolean, double...)</li>
+ *     <li>Primitive types &amp; wrappers (String, int, long, boolean, double...)</li>
  *     <li>{@code List<T>} where T is either primitive-like or adapter-supported</li>
  *     <li>Custom objects using {@link ConfigAdapter}</li>
  * </ul>

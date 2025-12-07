@@ -206,8 +206,6 @@ public class Node {
     /**
      * Searches this node <b>and all of its child nodes</b> recursively for a value
      * with the given key.
-     * </p>
-     *
      * <pre><code>
      * root {
      *     version = "1.0"
@@ -241,11 +239,8 @@ public class Node {
     /**
      * Resolves a value using a <b>dot-based path</b>, walking through child nodes.
      * Similar to <code>database.pool.size</code> lookup in config files.
-     * </p>
-     *
      * <p>
      * Path rules:
-     * </p>
      *
      * <ul>
      *     <li><b>"value"</b> → looks in this node only</li>

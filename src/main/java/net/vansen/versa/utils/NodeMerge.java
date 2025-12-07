@@ -25,7 +25,7 @@ public class NodeMerge {
      *   <li>User modified value → keep user's</li>
      *   <li>Key exists only in fresh → add it</li>
      *   <li>Branch exists in both → merge recursively</li>
-     *   <li>Output format replicates fresh layout & ordering</li>
+     *   <li>Output format replicates fresh layout &amp; ordering</li>
      * </ul>
      *
      * <p><b>Example:</b> (user old config) -> (fresh new config)</p>
@@ -99,7 +99,7 @@ public class NodeMerge {
     }
 
     /**
-     * <p>Merges missing values & branches from <b>defaults</b> into <b>user</b>
+     * <p>Merges missing values &amp; branches from <b>defaults</b> into <b>user</b>
      * without changing or reordering anything already present.</p>
      *
      * <p>Best used when loading configs at runtime to ensure missing
