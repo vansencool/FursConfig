@@ -1,5 +1,6 @@
 package net.vansen.versa.node.insert;
 
+import net.vansen.versa.builder.NodeBuilder;
 import net.vansen.versa.comments.Comment;
 import net.vansen.versa.comments.CommentType;
 import net.vansen.versa.node.Node;
@@ -26,7 +27,7 @@ import org.jetbrains.annotations.Nullable;
  *     .commentHash(" another note");
  * </pre>
  */
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public record InsertPoint(@NotNull Node node, int index) {
 
     /**
@@ -60,6 +61,15 @@ public record InsertPoint(@NotNull Node node, int index) {
     public @NotNull InsertPoint emptyLine() {
         node.order.add(index, new Entry(EntryType.EMPTY_LINE, ""));
         return new InsertPoint(node, index + 1);
+    }
+
+    /**
+     * Wraps the underlying node in a {@link NodeBuilder} for modification.
+     *
+     * @return a builder operating on this insert point's node
+     */
+    public @NotNull NodeBuilder builder() {
+        return NodeBuilder.fromNode(node);
     }
 
     /**

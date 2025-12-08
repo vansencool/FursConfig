@@ -6,6 +6,7 @@ import net.vansen.versa.node.Node;
 import net.vansen.versa.node.Value;
 import net.vansen.versa.node.entry.Entry;
 import net.vansen.versa.node.entry.EntryType;
+import net.vansen.versa.node.insert.InsertPoint;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -184,6 +185,50 @@ public class NodeBuilder {
     public @NotNull NodeBuilder branchEndCommentHash(@NotNull String text) {
         n.inlineComments.add(new Comment(CommentType.END_BRANCH, text, false));
         return this;
+    }
+
+    /**
+     * Creates an insertion point before a value matching this key.
+     * If the key does not exist, insertion defaults to the end.
+     *
+     * @param key value name to search for
+     * @return insertion point for adding comments, values or blanks
+     */
+    public @NotNull InsertPoint before(@NotNull String key) {
+        return n.before(key);
+    }
+
+    /**
+     * Creates an insertion point after a value matching this key.
+     * If the key does not exist, insertion defaults to the end.
+     *
+     * @param key value name to search
+     * @return insertion point directly after the matched value
+     */
+    public @NotNull InsertPoint after(@NotNull String key) {
+        return n.after(key);
+    }
+
+    /**
+     * Creates an insertion point before a branch with this name.
+     * If the branch does not exist, insertion defaults to the end.
+     *
+     * @param name branch name
+     * @return insertion point targeting the matching branch start
+     */
+    public @NotNull InsertPoint beforeBranch(@NotNull String name) {
+        return n.beforeBranch(name);
+    }
+
+    /**
+     * Creates an insertion point after a branch with this name.
+     * If the branch does not exist, insertion defaults to the end.
+     *
+     * @param name target branch name
+     * @return insertion point placed right after the branch
+     */
+    public @NotNull InsertPoint afterBranch(@NotNull String name) {
+        return n.afterBranch(name);
     }
 
     /**

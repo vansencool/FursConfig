@@ -8,13 +8,40 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks a static field inside a @ConfigFile class as mapped to a config key.
+ * Assigns a config key or nested path to a field/branch.
+ * Supports nested form (`server.host`) or class-scoped usage.
+ *
+ * <pre>{@code
+ * @ConfigFile("config.versa")
+ * public class AppConfig {
+ *
+ *     @ConfigPath("server.host")
+ *     public static String host = "127.0.0.1";
+ *
+ *     @ConfigPath("server")
+ *     @Branch
+ *     public static Server server = new Server();
+ *
+ *     public static class Server {
+ *          @ConfigPath("port") public int port = 25565;
+ *     }
+ * }
+ * }</pre>
+ *
+ * Output:
+ * <pre>
+ * server {
+ *     host = "127.0.0.1"
+ *     port = 25565
+ * }
+ * </pre>
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.FIELD)
+@Target({ElementType.FIELD, ElementType.TYPE})
 public @interface ConfigPath {
+
     /**
-     * @return config key / node path used for reading and writing
+     * The key/path used while reading & writing configuration.
      */
     @NotNull String value();
 }

@@ -1,15 +1,22 @@
 package net.vansen.versa.annotations.loader;
 
 import net.vansen.versa.Versa;
+import net.vansen.versa.annotations.Branch;
+import net.vansen.versa.annotations.ConfigBranchComment;
+import net.vansen.versa.annotations.ConfigBranchSpace;
+import net.vansen.versa.annotations.ConfigComment;
 import net.vansen.versa.annotations.ConfigFile;
 import net.vansen.versa.annotations.ConfigPath;
+import net.vansen.versa.annotations.ConfigSpace;
 import net.vansen.versa.annotations.adapter.Adapters;
 import net.vansen.versa.annotations.adapter.ConfigAdapter;
 import net.vansen.versa.builder.NodeBuilder;
 import net.vansen.versa.builder.ValueBuilder;
+import net.vansen.versa.comments.CommentType;
 import net.vansen.versa.node.Node;
 import net.vansen.versa.node.Value;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -51,17 +58,22 @@ import java.util.Map;
  * <p><b>Note:</b> Versa Config Loader is still in active development.
  * Expect API changes and occasional bugs.</p>
  */
-@SuppressWarnings("unchecked")
+
+@SuppressWarnings({"unused", "unchecked"})
 public final class ConfigLoader {
 
     private static final List<Class<?>> loaded = new ArrayList<>();
+    private static final Map<Class<?>, Node> nodes = new HashMap<>();
     private static final Map<Field, Object> defaults = new HashMap<>();
 
+    private ConfigLoader() {
+    }
+
     /**
-     * Loads a config class annotated with {@link ConfigFile}.
-     * Generates file if missing, applies defaults, then reads values in.
+     * Registers and loads a configuration class.
+     * Generates the config file from defaults on first run.
      *
-     * @param cls class containing static config fields
+     * @param cls class annotated with {@link ConfigFile}
      */
     public static void load(@NotNull Class<?> cls) {
         ConfigFile fileAnn = cls.getAnnotation(ConfigFile.class);
@@ -81,21 +93,34 @@ public final class ConfigLoader {
     }
 
     /**
-     * Reloads all previously loaded config classes.
-     * Useful for hot-reload / commands.
+     * Reloads all previously loaded configuration classes from disk.
+     * Restores values from the config while keeping defaults for missing keys.
      */
     public static void reload() {
         for (Class<?> c : loaded) apply(c);
     }
 
-    private static void saveDefaults(@NotNull Class<?> c) {
-        for (Field f : c.getDeclaredFields()) {
+    /**
+     * Returns the parsed root node of a configuration class.
+     * The class must have been loaded using {@link #load(Class)} first.
+     * If the config was not loaded yet, this returns null.
+     *
+     * @param cls config class
+     * @return root {@link Node} for this config, or null
+     */
+    public static Node node(Class<?> cls) {
+        return nodes.get(cls);
+    }
+
+    private static void saveDefaults(@NotNull Class<?> cls) {
+        for (Field f : cls.getDeclaredFields()) {
             ConfigPath cp = f.getAnnotation(ConfigPath.class);
-            if (cp == null) continue;
+            Branch br = f.getAnnotation(Branch.class);
+            if (cp == null && br == null) continue;
             if (!Modifier.isStatic(f.getModifiers()))
-                throw new RuntimeException("Config field '" + f.getName() + "' in " + c.getSimpleName() + " must be static");
+                throw new RuntimeException("Config field '" + f.getName() + "' in " + cls.getSimpleName() + " must be static");
             if (Modifier.isFinal(f.getModifiers()))
-                throw new RuntimeException("Config field '" + f.getName() + "' in " + c.getSimpleName() + " cannot be final");
+                throw new RuntimeException("Config field '" + f.getName() + "' in " + cls.getSimpleName() + " cannot be final");
             try {
                 f.setAccessible(true);
                 defaults.putIfAbsent(f, f.get(null));
@@ -104,34 +129,90 @@ public final class ConfigLoader {
             }
         }
     }
-    private static void apply(@NotNull Class<?> c) {
+
+    private static void apply(@NotNull Class<?> rootCls) {
         try {
-            ConfigFile file = c.getAnnotation(ConfigFile.class);
+            ConfigFile file = rootCls.getAnnotation(ConfigFile.class);
             if (file == null) return;
 
             Node root = Versa.parse(file.value());
+            nodes.put(rootCls, root);
 
-            for (Field f : c.getDeclaredFields()) {
+            for (Field f : rootCls.getDeclaredFields()) {
+                if (!Modifier.isStatic(f.getModifiers())) continue;
+
+                Branch br = f.getAnnotation(Branch.class);
                 ConfigPath cp = f.getAnnotation(ConfigPath.class);
+
+                if (br != null) {
+                    loadBranchField(root, f);
+                    continue;
+                }
+
                 if (cp == null) continue;
-                if (!Modifier.isStatic(f.getModifiers()))
-                    throw new RuntimeException("Config field '" + f.getName() + "' in " + c.getSimpleName() + " must be static");
 
                 Object v = fetch(root, cp.value(), f);
-
-                if (v == null) {
-                    Object def = defaults.get(f);
-                    set(f, def);
-                } else {
-                    set(f, v);
-                }
+                if (v == null) v = defaults.get(f);
+                setStatic(f, v);
             }
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
     }
 
-    private static Object fetch(Node root, String path, Field f) {
+    private static void loadBranchField(@NotNull Node root, @NotNull Field branchField) {
+        Class<?> branchType = branchField.getType();
+        ConfigPath clsPath = branchType.getAnnotation(ConfigPath.class);
+        String name = clsPath != null ? clsPath.value() : branchType.getSimpleName().toLowerCase();
+
+        Node node = root.getBranch(name);
+        try {
+            branchField.setAccessible(true);
+            Object instance = branchField.get(null);
+            if (instance == null) instance = branchType.getDeclaredConstructor().newInstance();
+            if (node != null) loadBranch(node, branchType, instance);
+            setStatic(branchField, instance);
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void loadBranch(@NotNull Node node, @NotNull Class<?> type, @NotNull Object instance) {
+        for (Field f : type.getDeclaredFields()) {
+            if (Modifier.isStatic(f.getModifiers())) continue;
+
+            Branch br = f.getAnnotation(Branch.class);
+            ConfigPath cp = f.getAnnotation(ConfigPath.class);
+
+            try {
+                f.setAccessible(true);
+
+                if (br != null) {
+                    Class<?> childType = f.getType();
+                    ConfigPath clsPath = childType.getAnnotation(ConfigPath.class);
+                    String childName = clsPath != null ? clsPath.value() : childType.getSimpleName().toLowerCase();
+                    Node childNode = node.getBranch(childName);
+
+                    Object childInstance = f.get(instance);
+                    if (childInstance == null) childInstance = childType.getDeclaredConstructor().newInstance();
+                    if (childNode != null) loadBranch(childNode, childType, childInstance);
+                    f.set(instance, childInstance);
+                    continue;
+                }
+
+                if (cp == null) continue;
+
+                Object def = f.get(instance);
+                Object v = fetchInNode(node, cp.value(), f);
+                if (v == null) v = def;
+                f.set(instance, v);
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private static @Nullable Object fetch(@NotNull Node root, @NotNull String path, @NotNull Field f) {
         Class<?> t = f.getType();
 
         if (t == String.class) return root.getString(path);
@@ -148,7 +229,7 @@ public final class ConfigLoader {
             Value v = root.getValue(path);
             if (v == null) return null;
 
-            ParameterizedType p = (ParameterizedType) f.getGenericType();
+            if (!(f.getGenericType() instanceof ParameterizedType p)) return null;
             Class<?> comp = (Class<?>) p.getActualTypeArguments()[0];
             ConfigAdapter<?> ad = Adapters.get(comp);
 
@@ -177,12 +258,58 @@ public final class ConfigLoader {
         return null;
     }
 
-    private static Node find(Node n, String path) {
+    private static @Nullable Object fetchInNode(@NotNull Node node, @NotNull String key, @NotNull Field f) {
+        Class<?> t = f.getType();
+
+        if (t == String.class) return node.getString(key);
+        if (t == int.class || t == Integer.class) return node.getInteger(key);
+        if (t == long.class || t == Long.class) return node.getLong(key);
+        if (t == boolean.class || t == Boolean.class) return node.getBool(key);
+        if (t == double.class || t == Double.class) return node.getDouble(key);
+        if (t == float.class || t == Float.class) {
+            Double d = node.getDouble(key);
+            return d == null ? null : d.floatValue();
+        }
+
+        if (List.class.isAssignableFrom(t)) {
+            Value v = node.getValue(key);
+            if (v == null) return null;
+
+            if (!(f.getGenericType() instanceof ParameterizedType p)) return null;
+            Class<?> comp = (Class<?>) p.getActualTypeArguments()[0];
+            ConfigAdapter<?> ad = Adapters.get(comp);
+
+            if (ad != null && v.branchList != null) {
+                List<Object> list = new ArrayList<>();
+                for (Node nd : v.branchList)
+                    list.add(((ConfigAdapter<Object>) ad).fromNode(nd));
+                return list;
+            }
+
+            if (v.list != null) {
+                List<Object> out = new ArrayList<>();
+                for (Value x : v.list) out.add(x.raw());
+                return out;
+            }
+            return null;
+        }
+
+        ConfigAdapter<?> ad = Adapters.get(t);
+        if (ad != null) {
+            Node nd = node.getBranch(key);
+            if (nd != null) return ((ConfigAdapter<Object>) ad).fromNode(nd);
+            return null;
+        }
+
+        return null;
+    }
+
+    private static @Nullable Node find(@NotNull Node n, @NotNull String path) {
         Node cur = n;
         for (String p : path.split("\\.")) {
             boolean ok = false;
             for (Node c : cur.children) {
-                if (c.name.equals(p)) {
+                if (p.equals(c.name)) {
                     cur = c;
                     ok = true;
                     break;
@@ -193,7 +320,7 @@ public final class ConfigLoader {
         return cur;
     }
 
-    private static void set(Field f, Object v) {
+    private static void setStatic(@NotNull Field f, @Nullable Object v) {
         try {
             VarHandle h = MethodHandles.privateLookupIn(f.getDeclaringClass(), MethodHandles.lookup())
                     .findStaticVarHandle(f.getDeclaringClass(), f.getName(), f.getType());
@@ -203,75 +330,237 @@ public final class ConfigLoader {
         }
     }
 
-    private static Node buildFromDefaults(Class<?> cls) {
+    private static @NotNull Node buildFromDefaults(@NotNull Class<?> rootCls) {
         NodeBuilder root = new NodeBuilder();
 
-        for (Field f : cls.getDeclaredFields()) {
+        for (Field f : rootCls.getDeclaredFields()) {
+            if (!Modifier.isStatic(f.getModifiers())) continue;
+
+            Branch br = f.getAnnotation(Branch.class);
             ConfigPath cp = f.getAnnotation(ConfigPath.class);
-            if (cp == null) continue;
+            if (cp == null && br == null) continue;
 
             Object def = defaults.get(f);
-            if (def == null) continue;
-
-            String name = cp.value();
             Class<?> type = f.getType();
+            ConfigAdapter<?> adType = Adapters.get(type);
 
-            ConfigAdapter<?> ad = Adapters.get(type);
-            if (ad != null) {
-                NodeBuilder nb = new NodeBuilder().name(name);
-                ((ConfigAdapter<Object>) ad).toNode(def, nb);
-                root.child(nb.build());
-                root.emptyLine();
+            if (adType != null && cp != null) {
+                String key = cp.value();
+                NodeBuilder nb = new NodeBuilder().name(key);
+                ((ConfigAdapter<Object>) adType).toNode(def, nb);
+                root.child(nb);
                 continue;
             }
 
+            if (br != null) {
+                buildBranchFromField(root, f);
+                continue;
+            }
+
+            String path = cp.value();
             if (List.class.isAssignableFrom(type)) {
-                List<?> list = (List<?>) def;
-                ParameterizedType p = (ParameterizedType) f.getGenericType();
-                Class<?> comp = (Class<?>) p.getActualTypeArguments()[0];
-                ConfigAdapter<?> cad = Adapters.get(comp);
-
-                if (cad != null) {
-                    Node[] arr = new Node[list.size()];
-                    for (int i = 0; i < list.size(); i++) {
-                        Object o = list.get(i);
-                        NodeBuilder nb = new NodeBuilder().name(name + "_" + i);
-                        ((ConfigAdapter<Object>) cad).toNode(o, nb);
-                        Node built = nb.build();
-                        built.name = null;
-                        arr[i] = built;
-                    }
-                    ValueBuilder vb = new ValueBuilder().name(name).branches(arr);
-                    root.add(vb);
-                    root.emptyLine();
-                    continue;
-                }
-
-                List<Value> lv = new ArrayList<>();
-                for (Object o : list) lv.add(asValue(o));
-                root.add(new ValueBuilder().name(name).list(lv.toArray(new Value[0])));
-                root.emptyLine();
-                continue;
+                if (def == null) def = List.of();
+                writeListValue(root, path, f, def);
+            } else if (def != null) {
+                writeScalarValue(root, path, f, def);
             }
-
-            ValueBuilder vb = new ValueBuilder().name(name);
-
-            if (def instanceof String s) vb.string(s);
-            else if (def instanceof Integer i) vb.intVal(i);
-            else if (def instanceof Long l) vb.longVal(l);
-            else if (def instanceof Boolean b) vb.bool(b);
-            else if (def instanceof Double d) vb.doubleVal(d);
-            else if (def instanceof Float fv) vb.floatVal(fv);
-            else continue;
-
-            root.add(vb);
-            root.emptyLine();
         }
 
         return root.build();
     }
 
-    private static Value asValue(Object o) {
+    private static void buildBranchFromField(@NotNull NodeBuilder root, @NotNull Field branchField) {
+        Class<?> branchType = branchField.getType();
+        ConfigPath cpType = branchType.getAnnotation(ConfigPath.class);
+        ConfigPath cpField = branchField.getAnnotation(ConfigPath.class);
+
+        String name;
+        if (cpField != null) name = cpField.value();
+        else if (cpType != null) name = cpType.value();
+        else name = branchType.getSimpleName().toLowerCase();
+
+        Node existing = root.build().getBranch(name);
+        NodeBuilder nb = existing != null ? NodeBuilder.fromNode(existing) : new NodeBuilder().name(name);
+
+        ConfigBranchComment bc = branchType.getAnnotation(ConfigBranchComment.class);
+        ConfigBranchSpace spClass = branchType.getAnnotation(ConfigBranchSpace.class);
+        ConfigBranchSpace spField = branchField.getAnnotation(ConfigBranchSpace.class);
+        ConfigBranchSpace sp = spField != null ? spField : spClass;
+
+        Object instance = defaults.get(branchField);
+        if (instance == null) {
+            try { instance = branchType.getDeclaredConstructor().newInstance(); }
+            catch (Throwable e) { throw new RuntimeException(e); }
+        }
+
+        injectBranchDefaults(nb, branchType, instance);
+
+        if (existing == null) {
+            if (sp != null && sp.before()) root.beforeBranch(name).emptyLine();
+            if (bc != null && !bc.start().isEmpty()) nb.branchStartComment(bc.start());
+            root.child(nb);
+            if (bc != null && !bc.end().isEmpty()) nb.branchEndComment(bc.end());
+            if (sp != null && sp.after()) root.afterBranch(name).emptyLine();
+        }
+    }
+
+    private static void injectBranchDefaults(@NotNull NodeBuilder base, @NotNull Class<?> cls, @NotNull Object instance) {
+        for (Field f : cls.getDeclaredFields()) {
+            if (Modifier.isStatic(f.getModifiers())) continue;
+
+            Branch br = f.getAnnotation(Branch.class);
+            ConfigPath cp = f.getAnnotation(ConfigPath.class);
+            if (cp == null && br == null) continue;
+
+            try {
+                f.setAccessible(true);
+                Object def = f.get(instance);
+                Class<?> type = f.getType();
+                ConfigAdapter<?> adType = Adapters.get(type);
+
+                if (adType != null && cp != null) {
+                    ConfigComment cc = f.getAnnotation(ConfigComment.class);
+                    ConfigSpace sp = f.getAnnotation(ConfigSpace.class);
+                    String key = cp.value();
+
+                    if (sp != null && sp.before()) base.before(key).emptyLine();
+
+                    NodeBuilder nb = new NodeBuilder().name(key);
+                    ((ConfigAdapter<Object>) adType).toNode(def, nb);
+                    base.child(nb);
+
+                    if (cc != null && !cc.inline()) base.afterBranch(key).comment(cc.value());
+                    if (sp != null && sp.after()) base.afterBranch(key).emptyLine();
+                    continue;
+                }
+
+                if (br != null) {
+                    Class<?> typeCls = f.getType();
+                    ConfigPath cpt = typeCls.getAnnotation(ConfigPath.class);
+                    String name = cpt != null ? cpt.value() : typeCls.getSimpleName().toLowerCase();
+
+                    ConfigBranchComment bc = typeCls.getAnnotation(ConfigBranchComment.class);
+                    ConfigBranchSpace s1 = typeCls.getAnnotation(ConfigBranchSpace.class);
+                    ConfigBranchSpace s2 = f.getAnnotation(ConfigBranchSpace.class);
+                    ConfigBranchSpace sp = s2 != null ? s2 : s1;
+
+                    if (sp != null && sp.before()) base.beforeBranch(name).emptyLine();
+
+                    NodeBuilder nb = new NodeBuilder().name(name);
+                    if (bc != null && !bc.start().isEmpty()) nb.branchStartComment(bc.start());
+
+                    if (def == null) def = typeCls.getDeclaredConstructor().newInstance();
+                    injectBranchDefaults(nb, typeCls, def);
+
+                    if (bc != null && !bc.end().isEmpty()) nb.branchEndComment(bc.end());
+                    base.child(nb);
+
+                    if (sp != null && sp.after()) base.afterBranch(name).emptyLine();
+                    continue;
+                }
+
+                ConfigComment cc = f.getAnnotation(ConfigComment.class);
+                ConfigSpace sp = f.getAnnotation(ConfigSpace.class);
+                String key = cp.value();
+
+                if (List.class.isAssignableFrom(type)) {
+                    if (def == null) def = List.of();
+                    if (sp != null && sp.before()) base.before(key).emptyLine();
+                    writeListValue(base, key, f, def);
+                    if (sp != null && sp.after()) base.after(key).emptyLine();
+                    continue;
+                }
+
+                if (def == null) continue;
+
+                if (sp != null && sp.before()) base.before(key).emptyLine();
+
+                ValueBuilder vb = new ValueBuilder().name(key);
+                if (def instanceof String s) vb.string(s);
+                else if (def instanceof Integer i) vb.intVal(i);
+                else if (def instanceof Long l) vb.longVal(l);
+                else if (def instanceof Boolean b) vb.bool(b);
+                else if (def instanceof Double d) vb.doubleVal(d);
+                else if (def instanceof Float fl) vb.floatVal(fl);
+
+                if (cc != null && cc.inline()) vb.comment(CommentType.INLINE_VALUE, cc.value());
+                base.add(vb.build());
+
+                if (cc != null && !cc.inline()) base.after(key).comment(cc.value());
+                if (sp != null && sp.after()) base.after(key).emptyLine();
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private static void writeListValue(@NotNull NodeBuilder root, @NotNull String path, @NotNull Field f, @NotNull Object def) {
+        String[] parts = path.split("\\.");
+        NodeBuilder t = root;
+        for (int i = 0; i < parts.length - 1; i++) t = getOrCreate(t, parts[i]);
+        String key = parts[parts.length - 1];
+
+        List<?> list = (List<?>) def;
+        ValueBuilder vb = new ValueBuilder().name(key);
+
+        if (list.isEmpty()) {
+            t.add(vb.list().build());
+            return;
+        }
+
+        ParameterizedType p = (ParameterizedType) f.getGenericType();
+        Class<?> comp = (Class<?>) p.getActualTypeArguments()[0];
+        ConfigAdapter<?> cad = Adapters.get(comp);
+
+        if (cad != null) {
+            Node[] arr = new Node[list.size()];
+            for (int i = 0; i < list.size(); i++) {
+                NodeBuilder nb = new NodeBuilder().name(key + "_" + i);
+                ((ConfigAdapter<Object>) cad).toNode(list.get(i), nb);
+                Node n = nb.build();
+                n.name = null;
+                arr[i] = n;
+            }
+            t.add(vb.branches(arr).build());
+            return;
+        }
+
+        List<Value> vals = new ArrayList<>();
+        for (Object o : list) vals.add(asValue(o));
+        t.add(vb.list(vals.toArray(new Value[0])).build());
+    }
+
+    private static void writeScalarValue(@NotNull NodeBuilder root, @NotNull String path, @NotNull Field f, @NotNull Object def) {
+        ConfigSpace sp = f.getAnnotation(ConfigSpace.class);
+        String[] parts = path.split("\\.");
+        NodeBuilder t = root;
+        for (int i = 0; i < parts.length - 1; i++) t = getOrCreate(t, parts[i]);
+        String key = parts[parts.length - 1];
+
+        if (sp != null && sp.before()) t.before(key).emptyLine();
+
+        ValueBuilder vb = new ValueBuilder().name(key);
+        if (def instanceof String s) vb.string(s);
+        else if (def instanceof Integer i) vb.intVal(i);
+        else if (def instanceof Long l) vb.longVal(l);
+        else if (def instanceof Boolean b) vb.bool(b);
+        else if (def instanceof Double d) vb.doubleVal(d);
+        else if (def instanceof Float fl) vb.floatVal(fl);
+
+        t.add(vb.build());
+
+        if (sp != null && sp.after()) t.after(key).emptyLine();
+    }
+
+    private static @NotNull NodeBuilder getOrCreate(@NotNull NodeBuilder parent, @NotNull String name) {
+        Node ex = parent.build().getBranch(name);
+        if (ex != null) return NodeBuilder.fromNode(ex);
+        NodeBuilder nb = new NodeBuilder().name(name);
+        parent.child(nb);
+        return nb;
+    }
+
+    private static @NotNull Value asValue(@NotNull Object o) {
         ValueBuilder v = new ValueBuilder();
         if (o instanceof String s) return v.string(s).build();
         if (o instanceof Integer i) return v.intVal(i).build();
