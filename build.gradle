@@ -4,16 +4,14 @@ plugins {
 }
 
 group = 'net.vansen'
-version = '2.0.1'
+version = '2.1.1'
 
 repositories {
     mavenCentral()
-    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
     implementation 'org.jetbrains:annotations:26.0.1'
-    testImplementation 'com.typesafe:config:1.4.3'
 }
 
 tasks.withType(Javadoc).configureEach {

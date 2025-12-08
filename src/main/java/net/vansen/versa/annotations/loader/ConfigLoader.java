@@ -27,7 +27,7 @@ import java.util.Map;
  * Loads and maps config values into Java static fields using {@code @ConfigFile} and {@code @ConfigPath}.
  * If the config file does not exist, it will be generated automatically using the default field values.
  * <p>
- * <p><b>Supports:</b></p>
+ * <b>Supports:</b>
  * <ul>
  *     <li>Primitive types &amp; wrappers (String, int, long, boolean, double...)</li>
  *     <li>{@code List<T>} where T is either primitive-like or adapter-supported</li>

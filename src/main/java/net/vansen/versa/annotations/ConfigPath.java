@@ -14,7 +14,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.FIELD)
 public @interface ConfigPath {
     /**
-     * @return config key / node path used for reading & writing
+     * @return config key / node path used for reading and writing
      */
     @NotNull String value();
 }

@@ -371,7 +371,7 @@ public class Node {
     }
 
     /**
-     * Converts list values into a List<String>.
+     * Converts list values into a {@code List<String>}.
      *
      * @param path path lookup
      * @return list of strings or null
@@ -385,7 +385,7 @@ public class Node {
     }
 
     /**
-     * Converts list values into List<Integer>.
+     * Converts list values into {@code List<Integer>}.
      *
      * @param path path lookup
      * @return integer list or null
