@@ -41,7 +41,7 @@ import java.lang.annotation.Target;
 public @interface ConfigPath {
 
     /**
-     * The key/path used while reading & writing configuration.
+     * The key/path used while reading and writing configuration.
      */
     @NotNull String value();
 }

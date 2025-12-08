@@ -41,7 +41,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.github.vansencool:Versa:2.1.0'
+    implementation 'com.github.vansencool:Versa:2.2.1'
 }
 ```
 
@@ -60,7 +60,7 @@ dependencies {
 <dependency>
     <groupId>com.github.vansencool</groupId>
     <artifactId>Versa</artifactId>
-    <version>2.1.0</version>
+    <version>2.2.1</version>
 </dependency>
 ```
 
