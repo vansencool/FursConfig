@@ -25,45 +25,93 @@ import java.util.Collections;
 public class ValueBuilder {
     private final Value val = new Value();
 
+
+    /**
+     * Creates a new builder instance.
+     *
+     * @return a fresh {@link ValueBuilder}
+     */
     public static ValueBuilder builder() {
         return new ValueBuilder();
     }
 
+    /**
+     * Sets the key/name of the value.
+     *
+     * @param n the value name/key
+     * @return this builder
+     */
     public ValueBuilder name(String n) {
         val.name = n;
         return this;
     }
 
+    /**
+     * Sets this value to a boolean type.
+     *
+     * @param b the boolean content
+     * @return this builder
+     */
     public ValueBuilder bool(boolean b) {
         val.type = ValueType.BOOL;
         val.iv = b ? 1 : 0;
         return this;
     }
 
+    /**
+     * Sets this value to an integer (auto-stored as INT).
+     *
+     * @param i the number
+     * @return this builder
+     */
     public ValueBuilder intVal(long i) {
         val.type = ValueType.INT;
         val.iv = i;
         return this;
     }
 
+    /**
+     * Sets this value to a long.
+     *
+     * @param l the long number
+     * @return this builder
+     */
     public ValueBuilder longVal(long l) {
         val.type = ValueType.LONG;
         val.iv = l;
         return this;
     }
 
+    /**
+     * Sets this value to a float (stored internally as double).
+     *
+     * @param f the float value
+     * @return this builder
+     */
     public ValueBuilder floatVal(double f) {
         val.type = ValueType.FLOAT;
         val.dv = f;
         return this;
     }
 
+    /**
+     * Sets this value to a double.
+     *
+     * @param d the number
+     * @return this builder
+     */
     public ValueBuilder doubleVal(double d) {
         val.type = ValueType.DOUBLE;
         val.dv = d;
         return this;
     }
 
+    /**
+     * Sets this value to a string.
+     *
+     * @param s the text
+     * @return this builder
+     */
     public ValueBuilder string(String s) {
         val.type = ValueType.STRING;
         val.sv = s;
@@ -71,16 +119,10 @@ public class ValueBuilder {
     }
 
     /**
-     * Creates a list value using other values.
+     * Creates a LIST type value using other {@link Value} elements.
      *
-     * <pre>
-     * Value list = new ValueBuilder()
-     *     .name("items")
-     *     .list(
-     *         new ValueBuilder().string("a").build(),
-     *         new ValueBuilder().string("b").build()
-     *     ).build();
-     * </pre>
+     * @param vs values that the list should contain
+     * @return this builder
      */
     public ValueBuilder list(Value... vs) {
         val.type = ValueType.LIST;
@@ -90,20 +132,10 @@ public class ValueBuilder {
     }
 
     /**
-     * Creates a list containing child branches instead of values.
+     * Creates a LIST_OF_BRANCHES type value using child {@link Node} entries.
      *
-     * <pre>
-     * Node worlds = new NodeBuilder()
-     *     .name("worlds")
-     *     .add(new ValueBuilder()
-     *         .name("dimensions")
-     *         .branches(
-     *             new NodeBuilder().name("overworld").build(),
-     *             new NodeBuilder().name("nether").build()
-     *         )
-     *     )
-     *     .build();
-     * </pre>
+     * @param ns nested branch nodes
+     * @return this builder
      */
     public ValueBuilder branches(Node... ns) {
         val.type = ValueType.LIST_OF_BRANCHES;
@@ -114,17 +146,22 @@ public class ValueBuilder {
 
     /**
      * Adds a comment to the value.
-     * Only INLINE_VALUE is currently used during printing.
+     * Only {@link CommentType#INLINE_VALUE} appears inline when printed.
      *
-     * <pre>
-     * .comment(CommentType.INLINE_VALUE, "explanation")
-     * </pre>
+     * @param t    comment type
+     * @param text text content (no slashes or # required)
+     * @return this builder
      */
     public ValueBuilder comment(CommentType t, String text) {
         val.comments.add(new Comment(t, text));
         return this;
     }
 
+    /**
+     * Returns the constructed {@link Value}, can be called multiple times.
+     *
+     * @return built Value instance
+     */
     public Value build() {
         return val;
     }

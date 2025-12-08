@@ -7,6 +7,7 @@ import net.vansen.versa.node.entry.EntryType;
 import net.vansen.versa.node.insert.InsertPoint;
 import net.vansen.versa.node.value.ValueType;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,7 +44,7 @@ import java.util.Map;
  * </p>
  *
  * <hr>
- * <h3>Quick Example — building + printing a config</h3>
+ * <h3>Quick Example | building + printing a config</h3>
  *
  * <pre><code>
  * Node root = new Node();
@@ -66,10 +67,6 @@ import java.util.Map;
  *
  * root.beforeBranch("pool").comment(" Database pool settings");
  *
- * pool.before("size").emptyLine();
- * pool.before("size").comment(" E 1");
- * pool.after("size").comment(" E 2");
- *
  * root.save(Path.of("config.versa"));
  * </code></pre>
  *
@@ -84,10 +81,7 @@ import java.util.Map;
  *
  * // Database pool settings
  * pool {
- *
- *     // E 1
  *     size = 10
- *     // E 2
  * }
  * </code></pre>
  *
@@ -140,12 +134,6 @@ import java.util.Map;
  *   <li><code>afterBranch("name")</code> → insert after child node</li>
  * </ul>
  *
- * <pre><code>
- * root.before("port").comment(" Port must stay above host");
- * root.after("host").emptyLine();
- * </code></pre>
- *
- *
  * <hr>
  * <h3>Tips</h3>
  * <ul>
@@ -196,9 +184,11 @@ public class Node {
     public List<Entry> order = new ArrayList<>();
 
     /**
-     * Returns the first child branch with the given name, or {@code null} if none.
+     * Returns the first child branch with the given name.
+     *
+     * @return The first child branch, or {@code null} if not found
      */
-    public Node getBranch(String n) {
+    public Node getBranch(@NotNull String n) {
         for (Node c : children) if (c.name.equals(n)) return c;
         return null;
     }
@@ -207,26 +197,24 @@ public class Node {
      * Searches this node <b>and all of its child nodes</b> recursively for a value
      * with the given key.
      * <pre><code>
-     * root {
-     *     version = "1.0"
-     *     database {
-     *         host = "localhost"
-     *         pool {
-     *             size = 10
-     *         }
+     * version = "1.0"
+     * database {
+     *     host = "localhost"
+     *     pool {
+     *         size = 10
      *     }
      * }
      *
-     * root.getValueDeep("host")  → "localhost"
-     * root.getValueDeep("size")  → 10
-     * root.getValueDeep("version") → "1.0"
-     * root.getValueDeep("missing") → null
+     * getValueDeep("host")    → "localhost"
+     * getValueDeep("size")    → 10
+     * getValueDeep("version") → "1.0"
+     * getValueDeep("missing") → null
      * </code></pre>
      *
      * @param key name of the value to search for
      * @return the first matching {@code Value}, or {@code null} if not found anywhere
      */
-    public Value getValueFromAnywhere(String key) {
+    public Value getValueFromAnywhere(@NotNull String key) {
         Value v = values.get(key);
         if (v != null) return v;
         for (Node c : children) {
@@ -284,79 +272,111 @@ public class Node {
     }
 
     /**
-     * Returns true if a dotted path resolves to a value within this node hierarchy.
+     * Checks whether a dotted lookup path resolves to an actual value
+     * inside this node or nested child nodes.
+     *
+     * @param path lookup path
+     * @return true if a value exists at that path
      */
     public boolean hasPath(@NotNull String path) {
         return getValue(path) != null;
     }
 
     /**
-     * Returns true if any value with this key exists anywhere in this node or childrens.
+     * Checks if any value with the given key exists anywhere in this node,
+     * including nested children (searches recursively).
+     *
+     * @param key raw value name such as "port"
+     * @return true if found anywhere in hierarchy
      */
     public boolean hasKey(@NotNull String key) {
         return getValueFromAnywhere(key) != null;
     }
 
     /**
-     * Returns a string using a dot-path lookup.
+     * Resolves a path and returns a String or null if missing.
+     *
+     * @param path lookup path
+     * @return string or null
      */
-    public String getString(@NotNull String path) {
+    public @Nullable String getString(@NotNull String path) {
         Value v = getValue(path);
         return v == null ? null : v.asString();
     }
 
     /**
-     * Returns an integer using a dot-path lookup
+     * Resolves a path into an Integer or null.
+     *
+     * @param path path lookup
+     * @return integer or null
      */
-    public Integer getInteger(@NotNull String path) {
+    public @Nullable Integer getInteger(@NotNull String path) {
         Value v = getValue(path);
         return v == null ? null : v.asInt();
     }
 
     /**
-     * Returns a long using a dot-path lookup.
+     * Resolves a path into a Long or null.
+     *
+     * @param path path lookup
+     * @return long or null
      */
-    public Long getLong(@NotNull String path) {
+    public @Nullable Long getLong(@NotNull String path) {
         Value v = getValue(path);
         return v == null ? null : v.asLong();
     }
 
     /**
-     * Returns a double using a dot-path lookup.
+     * Resolves a path into a Double or null.
+     *
+     * @param path path lookup
+     * @return double or null
      */
-    public Double getDouble(@NotNull String path) {
+    public @Nullable Double getDouble(@NotNull String path) {
         Value v = getValue(path);
         return v == null ? null : v.asDouble();
     }
 
     /**
-     * Returns a boolean using a dot-path lookup.
+     * Resolves a path into a Boolean or null.
+     *
+     * @param path path lookup
+     * @return boolean or null
      */
-    public Boolean getBool(@NotNull String path) {
+    public @Nullable Boolean getBool(@NotNull String path) {
         Value v = getValue(path);
         return v == null ? null : v.asBool();
     }
 
     /**
-     * Returns a list of raw Value items from a dot-path lookup.
+     * Gets a list value from a path, if present.
+     *
+     * @param path path lookup
+     * @return raw list or null
      */
-    public List<Value> getList(@NotNull String path) {
+    public @Nullable List<Value> getList(@NotNull String path) {
         Value v = getValue(path);
         return v == null ? null : v.asList();
     }
 
     /**
-     * Returns a list of Node branches from a dot-path lookup.
+     * Gets a list-of-branches value from a path.
+     *
+     * @param path path lookup
+     * @return list of nodes or null
      */
-    public List<Node> getBranchList(@NotNull String path) {
+    public @Nullable List<Node> getBranchList(@NotNull String path) {
         Value v = getValue(path);
         return v == null ? null : v.asBranchList();
     }
 
     /**
-     * Returns a string list from a dot-path lookup.
+     * Converts list values into a List<String>.
+     *
+     * @param path path lookup
+     * @return list of strings or null
      */
-    public List<String> getStringList(@NotNull String path) {
+    public @Nullable List<String> getStringList(@NotNull String path) {
         List<Value> l = getList(path);
         if (l == null) return null;
         List<String> out = new ArrayList<>();
@@ -365,9 +385,12 @@ public class Node {
     }
 
     /**
-     * Returns an integer list from a dot-path lookup.
+     * Converts list values into List<Integer>.
+     *
+     * @param path path lookup
+     * @return integer list or null
      */
-    public List<Integer> getIntegerList(@NotNull String path) {
+    public @Nullable List<Integer> getIntegerList(@NotNull String path) {
         List<Value> l = getList(path);
         if (l == null) return null;
         List<Integer> out = new ArrayList<>();
@@ -376,15 +399,23 @@ public class Node {
     }
 
     /**
-     * Returns a string from path or the default if missing.
+     * Returns a string at the given path or a fallback if missing.
+     *
+     * @param path lookup path
+     * @param def  returned if no value exists
+     * @return string value or {@code def}
      */
-    public String getString(@NotNull String path, String def) {
+    public String getString(@NotNull String path, @Nullable String def) {
         Value v = getValue(path);
         return v == null ? def : v.asString();
     }
 
     /**
-     * Returns an integer from path or a default.
+     * Returns an integer at the given path or default.
+     *
+     * @param path lookup path
+     * @param def  fallback if missing
+     * @return integer value or {@code def}
      */
     public int getInteger(@NotNull String path, int def) {
         Value v = getValue(path);
@@ -392,7 +423,11 @@ public class Node {
     }
 
     /**
-     * Returns a long from path or a default.
+     * Returns a long at path or fallback.
+     *
+     * @param path lookup path
+     * @param def  returned if not present
+     * @return resolved long value or {@code def}
      */
     public long getLong(@NotNull String path, long def) {
         Value v = getValue(path);
@@ -400,7 +435,11 @@ public class Node {
     }
 
     /**
-     * Returns a double from path or fallback.
+     * Returns a double at path or fallback.
+     *
+     * @param path lookup path
+     * @param def  default value if missing
+     * @return double value or {@code def}
      */
     public double getDouble(@NotNull String path, double def) {
         Value v = getValue(path);
@@ -408,34 +447,49 @@ public class Node {
     }
 
     /**
-     * Returns a boolean from path or fallback.
+     * Returns a boolean or fallback.
+     *
+     * @param path lookup path
+     * @param def  default if missing
+     * @return boolean or {@code def}
      */
-    public Boolean getBool(@NotNull String path, boolean def) {
+    public boolean getBool(@NotNull String path, boolean def) {
         Value v = getValue(path);
         return v == null ? def : v.asBool();
     }
 
     /**
-     * Returns a list from path or default list.
+     * Returns a raw list type or fallback.
+     *
+     * @param path lookup path
+     * @param def  used if not found
+     * @return {@code List<Value>} or default
      */
-    public List<Value> getList(@NotNull String path, List<Value> def) {
+    public @NotNull List<Value> getList(@NotNull String path, @NotNull List<Value> def) {
         Value v = getValue(path);
         return v == null ? def : v.asList();
     }
 
     /**
-     * Returns a branch list or default if missing.
+     * Returns a branch list or fallback.
+     *
+     * @param path lookup path
+     * @param def  returned if missing
+     * @return list of {@link Node} or default
      */
-    public List<Node> getBranchList(@NotNull String path, List<Node> def) {
+    public @NotNull List<Node> getBranchList(@NotNull String path, @NotNull List<Node> def) {
         Value v = getValue(path);
         return v == null ? def : v.asBranchList();
     }
 
     /**
-     * Returns a string list or a fallback list.
-     * Converts internal Value list into pure strings.
+     * Converts a list to list of strings.
+     *
+     * @param path lookup path
+     * @param def  used if missing
+     * @return list of strings or fallback
      */
-    public List<String> getStringList(@NotNull String path, List<String> def) {
+    public @NotNull List<String> getStringList(@NotNull String path, @NotNull List<String> def) {
         List<Value> l = getList(path);
         if (l == null) return def;
         List<String> out = new ArrayList<>();
@@ -444,10 +498,13 @@ public class Node {
     }
 
     /**
-     * Returns an integer list or fallback.
-     * Converts Value list into plain integers.
+     * Converts a list to integers.
+     *
+     * @param path lookup path
+     * @param def  returned if missing
+     * @return list of integers or fallback
      */
-    public List<Integer> getIntegerList(@NotNull String path, List<Integer> def) {
+    public @NotNull List<Integer> getIntegerList(@NotNull String path, @NotNull List<Integer> def) {
         List<Value> l = getList(path);
         if (l == null) return def;
         List<Integer> out = new ArrayList<>();
@@ -456,22 +513,27 @@ public class Node {
     }
 
     /**
-     * Sets or replaces a typed comment entry on this node.
-     * This is for meta comments, not directly printed unless wired into {@link #order}.
+     * Replaces existing comment type for this node and applies new text.
+     *
+     * @param t   comment classification
+     * @param txt content or {@code null} for empty
+     * @return same node for chaining
      */
-    public Node setComment(CommentType t, String txt) {
+    public @NotNull Node setComment(@NotNull CommentType t, @Nullable String txt) {
         inlineComments.removeIf(c -> c.type == t);
         inlineComments.add(new Comment(t, txt));
         return this;
     }
 
     /**
-     * Sets a simple value by name using a Java object.
-     * Supported types: {@link Boolean}, {@link Integer}, {@link Long},
-     * {@link Float}, {@link Double}, {@link String}.
-     * The value is added to {@link #values} and appended into {@link #order}.
+     * Creates or updates a value entry with Java-friendly types.
+     * Supported: Boolean, Integer, Long, Float, Double, String.
+     *
+     * @param name key name
+     * @param v    value object
+     * @return node for chaining
      */
-    public Node setValue(String name, Object v) {
+    public @NotNull Node setValue(@NotNull String name, @Nullable Object v) {
         Value val = new Value();
         val.name = name;
         if (v instanceof Boolean b) {
@@ -499,9 +561,13 @@ public class Node {
     }
 
     /**
-     * Sets or replaces a comment on an existing value, the comment will always be a inlined comment ("example = 5 // comment").
+     * Applies or replaces inline comment for a specific key.
+     *
+     * @param key key whose comment should change
+     * @param txt new inline text
+     * @return same node
      */
-    public Node setValueComment(String key, String txt) {
+    public @NotNull Node setValueComment(@NotNull String key, @Nullable String txt) {
         Value v = values.get(key);
         if (v != null) {
             v.comments.removeIf(c -> c.type == CommentType.INLINE_VALUE);
@@ -511,58 +577,81 @@ public class Node {
     }
 
     /**
-     * Adds a printed line comment at the current position in {@link #order}.
+     * Appends a standalone printed line comment.
+     *
+     * @param text text placed after `//`
+     * @return node for chaining
      */
-    public Node addLineComment(String text) {
+    public @NotNull Node addLineComment(@Nullable String text) {
         order.add(new Entry(EntryType.COMMENT, new Comment(CommentType.COMMENT_LINE, text)));
         return this;
     }
 
     /**
-     * Adds an empty line at the current position in {@link #order}.
+     * Inserts an empty line visually in the config.
+     *
+     * @return node for chaining
      */
-    public Node emptyLine() {
+    public @NotNull Node emptyLine() {
         order.add(new Entry(EntryType.EMPTY_LINE, ""));
         return this;
     }
 
     /**
-     * Attaches an inline comment after the opening `{` of this branch.
-     * Uses // or # depending on the boolean flag (true = slash).
+     * Adds an inline comment after this node's opening '{'.
+     * Always preserved during formatting and printing.
+     *
+     * @param text  the comment text (printed as-is, no automatic spacing)
+     * @param slash true to print using "//", false to print using "#"
+     * @return this node for chaining
      */
-    public Node addStartComment(String text, boolean slash) {
+    public Node addStartComment(@NotNull String text, boolean slash) {
         inlineComments.add(new Comment(CommentType.START_BRANCH, text, slash));
         return this;
     }
 
     /**
-     * Attaches an inline comment after the closing `}` of this branch.
-     * Uses // or # depending on the boolean flag (true = slash).
+     * Adds an inline comment after this node's closing '}'.
+     *
+     * @param text  the comment text
+     * @param slash true = //comment, false = #comment
+     * @return this node for chaining
      */
-    public Node addEndComment(String text, boolean slash) {
+    public Node addEndComment(@NotNull String text, boolean slash) {
         inlineComments.add(new Comment(CommentType.END_BRANCH, text, slash));
         return this;
     }
 
     /**
-     * Same as {@link #addStartComment(String, boolean)} but defaults to //.
+     * Same as {@link #addStartComment(String, boolean)} but uses '//' by default.
+     *
+     * @param text comment text
+     * @return this node for chaining
      */
-    public Node addStartComment(String text) {
+    public Node addStartComment(@NotNull String text) {
         return addStartComment(text, true);
     }
 
     /**
-     * Same as {@link #addEndComment(String, boolean)} but defaults to //.
+     * Same as {@link #addEndComment(String, boolean)} but uses '//' by default.
+     *
+     * @param text comment text
+     * @return this node for chaining
      */
-    public Node addEndComment(String text) {
+    public Node addEndComment(@NotNull String text) {
         return addEndComment(text, true);
     }
 
     /**
-     * Adds an inline comment after the opening `{` of a child branch.
-     * Does nothing if the branch does not exist.
+     * Adds a START_BRANCH inline comment to a direct child branch.
+     * If the named branch does not exist, nothing happens.
+     *
+     * @param branch name of child branch
+     * @param text   comment text
+     * @param slash  true = //comment, false = #comment
+     * @return this node for chaining
      */
-    public Node addStartCommentTo(String branch, String text, boolean slash) {
+    public Node addStartCommentTo(@NotNull String branch, @NotNull String text, boolean slash) {
         for (Node n : children) {
             if (n.name.equals(branch)) {
                 n.inlineComments.add(new Comment(CommentType.START_BRANCH, text, slash));
@@ -573,10 +662,15 @@ public class Node {
     }
 
     /**
-     * Adds an inline comment after the closing `}` of a child branch.
-     * Does nothing if the branch does not exist.
+     * Adds an END_BRANCH inline comment to a direct child branch.
+     * Does nothing if branch doesn't exist.
+     *
+     * @param branch name of branch
+     * @param text   comment text
+     * @param slash  true = //, false = #
+     * @return this node for chaining
      */
-    public Node addEndCommentTo(String branch, String text, boolean slash) {
+    public Node addEndCommentTo(@NotNull String branch, @NotNull String text, boolean slash) {
         for (Node n : children) {
             if (n.name.equals(branch)) {
                 n.inlineComments.add(new Comment(CommentType.END_BRANCH, text, slash));
@@ -587,34 +681,25 @@ public class Node {
     }
 
     /**
-     * Short form of {@link #addStartCommentTo(String, String, boolean)}
-     * using // as default comment marker.
+     * Adds a child branch to this node and preserves ordering.
+     *
+     * @param child branch to append
+     * @return this node
      */
-    public Node addStartCommentTo(String branch, String text) {
-        return addStartCommentTo(branch, text, true);
-    }
-
-    /**
-     * Short form of {@link #addEndCommentTo(String, String, boolean)}
-     * using // as default comment marker.
-     */
-    public Node addEndCommentTo(String branch, String text) {
-        return addEndCommentTo(branch, text, true);
-    }
-
-    /**
-     * Adds a child branch and appends it to {@link #order}.
-     */
-    public Node addBranch(Node child) {
+    public Node addBranch(@NotNull Node child) {
         children.add(child);
         order.add(new Entry(EntryType.BRANCH, child));
         return this;
     }
 
     /**
-     * Find insert index before a value with this key.
+     * Creates an insertion point before a value with matching key.
+     * If not found, insertion defaults to end of the node.
+     *
+     * @param key target value key
+     * @return insertion point used for comment placement, value insertion, etc.
      */
-    public InsertPoint before(String key) {
+    public @NotNull InsertPoint before(@NotNull String key) {
         for (int i = 0; i < order.size(); i++) {
             Entry e = order.get(i);
             if (e.t == EntryType.VALUE && ((Value) e.o).name.equals(key))
@@ -624,9 +709,13 @@ public class Node {
     }
 
     /**
-     * Find insert index after a value with this key.
+     * Creates an insertion point after a value with matching key.
+     * If not found, insertion defaults to end.
+     *
+     * @param key value name
+     * @return insertion point
      */
-    public InsertPoint after(String key) {
+    public @NotNull InsertPoint after(@NotNull String key) {
         for (int i = 0; i < order.size(); i++) {
             Entry e = order.get(i);
             if (e.t == EntryType.VALUE && ((Value) e.o).name.equals(key))
@@ -636,9 +725,13 @@ public class Node {
     }
 
     /**
-     * Insert before a branch by name.
+     * Creates an insertion point before a branch with given name.
+     * If none exists, inserts at end.
+     *
+     * @param name branch name
+     * @return insertion point
      */
-    public InsertPoint beforeBranch(String name) {
+    public @NotNull InsertPoint beforeBranch(@NotNull String name) {
         for (int i = 0; i < order.size(); i++) {
             Entry e = order.get(i);
             if (e.t == EntryType.BRANCH && ((Node) e.o).name.equals(name))
@@ -648,9 +741,12 @@ public class Node {
     }
 
     /**
-     * Insert after a branch by name.
+     * Creates an insertion point after a branch with given name.
+     *
+     * @param name branch to search
+     * @return new insertion point, or end if not found
      */
-    public InsertPoint afterBranch(String name) {
+    public @NotNull InsertPoint afterBranch(@NotNull String name) {
         for (int i = 0; i < order.size(); i++) {
             Entry e = order.get(i);
             if (e.t == EntryType.BRANCH && ((Node) e.o).name.equals(name))
@@ -723,6 +819,8 @@ public class Node {
 
     /**
      * Renders this node as a configuration string.
+     *
+     * @return Rendered configuration
      */
     @Override
     public String toString() {
@@ -730,21 +828,22 @@ public class Node {
     }
 
     /**
-     * Writes this node to a file using UTF-8 encoding.
+     * Writes this node to a file.
+     *
+     * @param file File to write at
      */
-    public void save(File file) {
-        try {
-            Files.writeString(file.toPath(), toString(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+    public void save(@NotNull File file) {
+        save(file.toPath());
     }
 
     /**
-     * Writes this node to a path using UTF-8 encoding.
+     * Writes this node to a path.
+     *
+     * @param path Path to write at
      */
-    public void save(Path path) {
+    public void save(@NotNull Path path) {
         try {
+            if (path.getParent() != null) Files.createDirectories(path.getParent());
             Files.writeString(path, toString(), StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new UncheckedIOException(e);

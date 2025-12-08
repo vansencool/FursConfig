@@ -1,140 +1,196 @@
-# FursConfig
+<div align="center">
 
-FursConfig is a high-performance configuration similar to HOCON, but with significantly faster parsing. It is designed to handle both small and large configurations with ease.
+# **Versa**
+### *High performance, feature packed configuration system*
 
-> **⚠ Experimental, but stable enough for use!** While FursConfig is still new, it works just fine and is ready for practical applications.
+**Successor of FursConfig, rewritten from zero**
+  
+Readable, fast, flexible, modifiable.  
+Works great with small configs, scales to massive ones just as easily.
 
-## Installation
+</div>
 
-**Gradle**
+---
+
+## ⭐ Features at a glance
+
+✔ Very fast parsing (around **3x faster** than Typesafe's Config based on general benchmarks)  
+✔ Human readable syntax with **spaces in keys supported**  
+✔ Uses `=` or `:` assignment (`name = "v"`, `name: "v"`) (preserved)  
+✔ `//` and `#` comments supported (inline and standalone) (preserved)  
+✔ **Formatting preserved** when writing back to file  
+✔ **Runtime editing** of config nodes  
+✔ **NodeBuilder API** for generating configs in code  
+✔ **Merge support** for default + user configs  
+✔ Can load, modify, save and reformat configs easily  
+✔ Adapters let you bind config data to real objects
+
+---
+
+<div align="center">
+
+## **Installation**
+
+
+### **Gradle**
+</div>
 
 ```groovy
 repositories {
     maven { url 'https://jitpack.io' }
 }
-```
 
-```groovy
 dependencies {
-    implementation 'com.github.vansencool:FursConfig:1.0.3'
+    implementation 'com.github.vansencool:Versa:2.1.0'
 }
 ```
 
-**Maven**
+<div align="center">
+
+### **Maven**
+
+</div>
 
 ```xml
 <repository>
     <id>jitpack.io</id>
     <url>https://jitpack.io</url>
 </repository>
-```
 
-```xml
 <dependency>
     <groupId>com.github.vansencool</groupId>
-    <artifactId>FursConfig</artifactId>
-    <version>1.0.3</version>
+    <artifactId>Versa</artifactId>
+    <version>2.1.0</version>
 </dependency>
 ```
 
 ---
 
-## Features
+## 📌 Syntax Overview
 
-- **Branches**: Hierarchical structure, we call them "branches" (or "nodes").
-- **Multiple Data Types**: Supports `list`, `float`, `double`, `int`, `long`, and `string`.
-- **Comment Support**: Define comments using `//` or `#`.
-- **Optimized Parsing**: Up to **90% faster** compared to Typesafe Config.
-
----
-
-## Syntax Overview
-
-### Root Node
+### Root values
 
 ```hocon
-is_enabled = true
-what_is_3_and_3 = 6
-```
+enabled = true
+welcome: "Hello world"
+answer is = 42         # spaces in keys work fine
+````
 
 ### Branches
 
 ```hocon
-some_branch {
-    is_enabled = true
-    what_is_3_and_3 = 6
+server {
+    name = "MyServer"
+    port = 25565
 }
 ```
 
-### Nested Branches
+### Nested structure
 
 ```hocon
-some_branch_1 {
-     cool_to_meet_you = true
-     other_branch {
-         some_other_branchs_value = "hello"
-     }
+app {
+    database {
+        host = "localhost"
+        port = 3306
+    }
+
+    logging {
+        level = "INFO"
+    }
 }
 ```
-
-### Supported Data Types
-
-- `list`
-- `float` (stored as double but converted to float)
-- `double`
-- `int`
-- `long`
-- `string`
 
 ### Comments
 
-Define comments using:
-
 ```hocon
-// This is a comment
-# This is also a comment
-```
+// standalone comment
+# also supported
 
-#### Comments on Branches
-
-```hocon
-branch { // This is cool!
-    value = 42
-}
-```
-
-#### Comments on Values
-
-```hocon
-this_is_cool_isnt_it = true // Of course!
+value = 10 // inline here
+text = "Hi" # works too
 ```
 
 ### Lists
 
-**Simple Lists:**
-
 ```hocon
-list = ["Hello there", "How are you doing?"]
+names = [ "Alice", "Bob", "Charlie" ]
+numbers: [1,2,3,4]
 ```
 
-**Complex Lists:** (List of branches)
+### List of branches (complex lists)
 
 ```hocon
-list = [
+servers = [
     {
-        value = "Hello there!"
+      name = "prod"     
+      secure = true
     },
     {
-        value = "How are you doing?"
+      name = "testing"  
+      secure = false
     }
 ]
 ```
 
+## NodeBuilder Example
+
+Build configuration programmatically with full control over layout.
+
+```java
+Node cfg = new NodeBuilder()
+    .name("root")
+    .child(NodeBuilder.builder()
+            .name("database")
+            .startComment(" Connection settings") // branch start comment
+            .add(new ValueBuilder().name("host").string("localhost"))
+            .add(new ValueBuilder().name("port").intVal(3306))
+            .emptyLine()
+            .child(
+                    new NodeBuilder()
+                            .name("pool")
+                            .add(new ValueBuilder().name("size").intVal(10))
+                            .build()
+            ).build()
+    )
+    .build();
+
+System.out.println(cfg);
+```
+
+Output:
+
+```hocon
+database { // Connection settings
+    host = "localhost"
+    port = 3306
+
+    pool {
+        size = 10
+    }
+}
+```
+
 ---
 
-## Differences from Typesafe Config
+## Differences from FursConfig
 
-- **No Spaces in Keys**: FursConfig does not allow spaces in keys (like, `some key = "value"`).
-- **Faster Parsing**: "At least" 15% faster in every scenario, with average improvements ranging from 30% to 70%.
+| Feature                   | FursConfig    | Versa        |
+|---------------------------|---------------| ------------ |
+| Writing configs back      | No            | Yes          |
+| Formatting preserved      | No            | Yes          |
+| Editing config            | No            | Yes          |
+| Merging system            | No            | Yes          |
+| Node builder API          | No            | Yes          |
+| Handles comments properly | Not at all    | Full support |
+| Spaces in keys            | No            | Yes          |
+| Performance               | Decently Fast | Much faster  |
+
+Versa is essentially the "completed version" of what FursConfig started.
 
 ---
+
+## Notes
+
+There is a lot more to explore inside Versa.
+
+**Documentation is coming soon.**

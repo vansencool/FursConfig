@@ -2,6 +2,7 @@ package net.vansen.versa.annotations.adapter;
 
 import net.vansen.versa.builder.NodeBuilder;
 import net.vansen.versa.node.Node;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Converts objects to and from Versa node structures.
@@ -21,7 +22,20 @@ import net.vansen.versa.node.Node;
  * }</pre>
  */
 public interface ConfigAdapter<T> {
-    T fromNode(Node node);
 
-    void toNode(T value, NodeBuilder builder);
+    /**
+     * Creates an object instance from a parsed node.
+     *
+     * @param node source node containing values
+     * @return constructed object instance
+     */
+    @NotNull T fromNode(@NotNull Node node);
+
+    /**
+     * Writes an object into builder form for saving/serialization.
+     *
+     * @param value object to serialize into config form
+     * @param builder node builder to write into
+     */
+    void toNode(@NotNull T value, @NotNull NodeBuilder builder);
 }

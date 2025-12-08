@@ -17,41 +17,54 @@ import java.util.Deque;
 import java.util.List;
 import java.util.function.Consumer;
 
-@SuppressWarnings({"unused", "DataFlowIssue"})
+/**
+ * Core text parser for the Versa configuration format.
+ * Converts raw config text into a {@link Node} tree while preserving structure,
+ * comments, lists, branches, and formatting order.
+ * <p>
+ * The parser is line-based. Multiple statements on the same line are not supported,
+ * and doing so will cause the first key to be parsed normally while everything after
+ * it becomes part of the value string. Each value/branch entry must begin on its own line.
+ * <p>
+ * When {@link #strict} is enabled, invalid syntax throws an exception.
+ * When disabled, errors are logged using {@link #errorHandler} and parsing continues.
+ */
 
+@SuppressWarnings({"unused", "DataFlowIssue"})
 public class VersaParser {
     private final String[] lines;
     private final Deque<Node> stack = new ArrayDeque<>();
-    public boolean strict = true;
+    private boolean strict = true;
     public Consumer<String> errorHandler = System.out::println;
     private int ln;
 
-    public VersaParser(String s) {
+    /**
+     * Creates a new Versa parser with strict mode ON by default.
+     *
+     * @param s configuration text
+     */
+    public VersaParser(@NotNull String s) {
         this.lines = split(s);
         ln = 0;
     }
 
-    public VersaParser(String s, boolean strict) {
+    /**
+     * Creates a Versa parser with optional strict behavior.
+     *
+     * @param s configuration text
+     * @param strict whether to throw errors instead of logging them
+     */
+    public VersaParser(@NotNull String s, boolean strict) {
         this(s);
         this.strict = strict;
     }
 
-    public static String[] split(String s) {
-        int len = s.length(), count = 1;
-        for (int i = 0; i < len; i++) if (s.charAt(i) == '\n') count++;
-        String[] r = new String[count];
-        int p = 0, start = 0;
-        for (int i = 0; i < len; i++) {
-            if (s.charAt(i) == '\n') {
-                r[p++] = s.substring(start, i);
-                start = i + 1;
-            }
-        }
-        r[p] = start < len ? s.substring(start) : "";
-        return r;
-    }
-
-    public Node parse() {
+    /**
+     * Parses the input and returns the root {@link Node}.
+     *
+     * @return parsed configuration tree
+     */
+    public @NotNull Node parse() {
         Node root = new Node();
         stack.push(root);
 
@@ -160,7 +173,7 @@ public class VersaParser {
         VersaLog.warn("Parser", m);
     }
 
-    private Value parseValueFromLines(@NotNull String start) {
+    private Value parseValueFromLines(String start) {
         StringBuilder acc = new StringBuilder(start);
         if (start.isEmpty()) {
             ln++;
@@ -314,10 +327,25 @@ public class VersaParser {
         return out;
     }
 
-    private String stripQuotes(@NotNull String s) {
+    private String stripQuotes(String s) {
         s = s.trim();
         if (s.startsWith("\"") && s.endsWith("\"") && s.length() >= 2) return s.substring(1, s.length() - 1);
         return s;
+    }
+
+    private static String[] split(String s) {
+        int len = s.length(), count = 1;
+        for (int i = 0; i < len; i++) if (s.charAt(i) == '\n') count++;
+        String[] r = new String[count];
+        int p = 0, start = 0;
+        for (int i = 0; i < len; i++) {
+            if (s.charAt(i) == '\n') {
+                r[p++] = s.substring(start, i);
+                start = i + 1;
+            }
+        }
+        r[p] = start < len ? s.substring(start) : "";
+        return r;
     }
 
     private String stripInlineComment(String s) {
@@ -333,7 +361,7 @@ public class VersaParser {
         return s;
     }
 
-    private String findInlineComment(@NotNull String line, int start) {
+    private String findInlineComment(String line, int start) {
         int i = start;
         boolean inQ = false;
         for (; i < line.length(); i++) {
@@ -372,7 +400,7 @@ public class VersaParser {
         }
     }
 
-    private int indexOfNonQuoted(@NotNull String s, char ch) {
+    private int indexOfNonQuoted(String s, char ch) {
         boolean inQ = false;
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);

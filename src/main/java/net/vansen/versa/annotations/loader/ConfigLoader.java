@@ -9,6 +9,7 @@ import net.vansen.versa.builder.NodeBuilder;
 import net.vansen.versa.builder.ValueBuilder;
 import net.vansen.versa.node.Node;
 import net.vansen.versa.node.Value;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -56,7 +57,13 @@ public final class ConfigLoader {
     private static final List<Class<?>> loaded = new ArrayList<>();
     private static final Map<Field, Object> defaults = new HashMap<>();
 
-    public static void load(Class<?> cls) {
+    /**
+     * Loads a config class annotated with {@link ConfigFile}.
+     * Generates file if missing, applies defaults, then reads values in.
+     *
+     * @param cls class containing static config fields
+     */
+    public static void load(@NotNull Class<?> cls) {
         ConfigFile fileAnn = cls.getAnnotation(ConfigFile.class);
         if (fileAnn == null) return;
 
@@ -65,7 +72,7 @@ public final class ConfigLoader {
         Path file = Path.of(fileAnn.value());
         if (!Files.exists(file)) {
             Node built = buildFromDefaults(cls);
-            write(file, built.toString());
+            built.save(file);
         }
 
         apply(cls);
@@ -73,11 +80,15 @@ public final class ConfigLoader {
         if (!loaded.contains(cls)) loaded.add(cls);
     }
 
+    /**
+     * Reloads all previously loaded config classes.
+     * Useful for hot-reload / commands.
+     */
     public static void reload() {
         for (Class<?> c : loaded) apply(c);
     }
 
-    private static void saveDefaults(Class<?> c) {
+    private static void saveDefaults(@NotNull Class<?> c) {
         for (Field f : c.getDeclaredFields()) {
             ConfigPath cp = f.getAnnotation(ConfigPath.class);
             if (cp == null) continue;
@@ -93,8 +104,7 @@ public final class ConfigLoader {
             }
         }
     }
-
-    private static void apply(Class<?> c) {
+    private static void apply(@NotNull Class<?> c) {
         try {
             ConfigFile file = c.getAnnotation(ConfigFile.class);
             if (file == null) return;
@@ -121,11 +131,6 @@ public final class ConfigLoader {
         }
     }
 
-    private static Class<?> generic(Field f) {
-        ParameterizedType p = (ParameterizedType) f.getGenericType();
-        return (Class<?>) p.getActualTypeArguments()[0];
-    }
-
     private static Object fetch(Node root, String path, Field f) {
         Class<?> t = f.getType();
 
@@ -143,7 +148,8 @@ public final class ConfigLoader {
             Value v = root.getValue(path);
             if (v == null) return null;
 
-            Class<?> comp = generic(f);
+            ParameterizedType p = (ParameterizedType) f.getGenericType();
+            Class<?> comp = (Class<?>) p.getActualTypeArguments()[0];
             ConfigAdapter<?> ad = Adapters.get(comp);
 
             if (ad != null && v.branchList != null) {
@@ -221,7 +227,8 @@ public final class ConfigLoader {
 
             if (List.class.isAssignableFrom(type)) {
                 List<?> list = (List<?>) def;
-                Class<?> comp = generic(f);
+                ParameterizedType p = (ParameterizedType) f.getGenericType();
+                Class<?> comp = (Class<?>) p.getActualTypeArguments()[0];
                 ConfigAdapter<?> cad = Adapters.get(comp);
 
                 if (cad != null) {
@@ -273,14 +280,5 @@ public final class ConfigLoader {
         if (o instanceof Double d) return v.doubleVal(d).build();
         if (o instanceof Float f) return v.floatVal(f.doubleValue()).build();
         return v.string(o.toString()).build();
-    }
-
-    private static void write(Path p, String s) {
-        try {
-            if (p.getParent() != null) Files.createDirectories(p.getParent());
-            Files.writeString(p, s);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed writing config " + p, e);
-        }
     }
 }

@@ -6,14 +6,14 @@ import net.vansen.versa.node.Node;
 import net.vansen.versa.node.Value;
 import net.vansen.versa.node.entry.Entry;
 import net.vansen.versa.node.entry.EntryType;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Builds a {@link Node} (configuration branch).
  * Nodes store values, child nodes, comments, blank lines, and formatting order.
  * <p>
  * Example full config construction:
- *
- * <pre>
+ * <pre><code>
  * Node config = new NodeBuilder()
  *     .name("database")
  *     .comment("Connection settings")
@@ -29,136 +29,179 @@ import net.vansen.versa.node.entry.EntryType;
  *     .build();
  *
  * System.out.println(config);
- * </pre>
+ * </code></pre>
  */
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public class NodeBuilder {
-    private final Node n = new Node();
+    private Node n = new Node();
 
-    public static NodeBuilder builder() {
+    /**
+     * Creates a new empty node builder.
+     *
+     * @return new {@link NodeBuilder}
+     */
+    public static @NotNull NodeBuilder builder() {
         return new NodeBuilder();
     }
 
-    public NodeBuilder name(String name) {
+    /**
+     * Creates a builder wrapping an existing {@link Node}.
+     * Useful for modification or merging.
+     *
+     * @param n source node
+     * @return builder operating on that node
+     */
+    public static @NotNull NodeBuilder fromNode(@NotNull Node n) {
+        NodeBuilder b = new NodeBuilder();
+        b.n = n;
+        return b;
+    }
+
+    /**
+     * Sets the branch/node name.
+     *
+     * @param name name of this node
+     * @return this builder
+     */
+    public @NotNull NodeBuilder name(@NotNull String name) {
         n.name = name;
         return this;
     }
 
     /**
-     * Adds a built value to the node
+     * Adds a completed {@link Value} entry into the node.
+     *
+     * @param v value instance
+     * @return this builder
      */
-    public NodeBuilder add(Value v) {
+    public @NotNull NodeBuilder add(@NotNull Value v) {
         n.values.put(v.name, v);
         n.order.add(new Entry(EntryType.VALUE, v));
         return this;
     }
 
     /**
-     * Shortcut for builder
+     * Convenience method using {@link ValueBuilder}.
+     *
+     * @param vb value builder to build and insert
+     * @return this builder
      */
-    public NodeBuilder add(ValueBuilder vb) {
+    public @NotNull NodeBuilder add(@NotNull ValueBuilder vb) {
         return add(vb.build());
     }
 
     /**
-     * Adds a nested config branch
+     * Adds a nested child {@link Node}.
+     *
+     * @param c child node
+     * @return this builder
      */
-    public NodeBuilder child(Node c) {
+    public @NotNull NodeBuilder child(@NotNull Node c) {
         n.children.add(c);
         n.order.add(new Entry(EntryType.BRANCH, c));
         return this;
     }
 
     /**
-     * Adds a // comment as a full standalone line.
-     * NOTE: If you want a space after the slashes, begin the text with a leading space.
-     * <pre>
-     * .comment(" This is a comment")  -> // This is a comment
-     * .comment("NoSpace")            -> //NoSpace
-     * </pre>
+     * Convenience overload for child using {@link NodeBuilder}.
+     *
+     * @param b builder that will be built into node
+     * @return this builder
      */
-    public NodeBuilder comment(String text) {
+    public @NotNull NodeBuilder child(@NotNull NodeBuilder b) {
+        return child(b.build());
+    }
+
+    /**
+     * Adds a standalone `//` comment line.
+     * A leading space in text determines spacing after //.
+     *
+     * @param text comment content
+     * @return this builder
+     */
+    public @NotNull NodeBuilder comment(@NotNull String text) {
         Comment c = new Comment(CommentType.COMMENT_LINE, text, true);
         n.order.add(new Entry(EntryType.COMMENT, c));
         return this;
     }
 
     /**
-     * Adds a # comment as a full standalone line.
-     * NOTE: If you want a space after '#', begin the text with a leading space.
-     * <pre>
-     * .commentHash(" This uses hash") -> # This uses hash
-     * .commentHash("NoSpace")         -> #NoSpace
-     * </pre>
+     * Adds a standalone `#` comment line.
+     * A leading space in text determines spacing after #.
+     *
+     * @param text comment content
+     * @return this builder
      */
-    public NodeBuilder commentHash(String text) {
+    public @NotNull NodeBuilder commentHash(@NotNull String text) {
         Comment c = new Comment(CommentType.COMMENT_LINE, text, false);
         n.order.add(new Entry(EntryType.COMMENT, c));
         return this;
     }
 
     /**
-     * Adds a start-branch inline comment after `{` using `//`.
-     * Appears as:  section { // comment
-     * If you want a space after //, begin with a space in text.
-     * <pre>
-     * .startComment(" Text") -> { // Text
-     * .startComment("NoSpace")-> { //NoSpace
-     * </pre>
+     * Adds an inline `//` comment at the opening `{`.
+     * Appears as: `name { // comment`
+     *
+     * @param text comment content
+     * @return this builder
      */
-    public NodeBuilder startComment(String text) {
+    public @NotNull NodeBuilder branchStartComment(@NotNull String text) {
         n.inlineComments.add(new Comment(CommentType.START_BRANCH, text, true));
         return this;
     }
 
     /**
-     * Adds a start-branch inline comment using `#`.
-     * Appears as:  section { #comment
-     * <pre>
-     * .startCommentHash(" Text") -> { # Text
-     * .startCommentHash("No")    -> { #No
-     * </pre>
+     * Adds an inline `#` comment at `{`.
+     * Appears as: `name { #comment`
+     *
+     * @param text comment content
+     * @return this builder
      */
-    public NodeBuilder startCommentHash(String text) {
+    public @NotNull NodeBuilder branchStartCommentHash(@NotNull String text) {
         n.inlineComments.add(new Comment(CommentType.START_BRANCH, text, false));
         return this;
     }
 
     /**
-     * Adds an end-branch inline comment after `}` using `//`.
-     * Printed as: } // comment
-     * <pre>
-     * .endComment(" Text") -> } // Text
-     * .endComment("No")    -> } //No
-     * </pre>
+     * Adds an inline `//` comment after `}`.
+     * Appears as: `} // comment`
+     *
+     * @param text comment content
+     * @return this builder
      */
-    public NodeBuilder endComment(String text) {
+    public @NotNull NodeBuilder branchEndComment(@NotNull String text) {
         n.inlineComments.add(new Comment(CommentType.END_BRANCH, text, true));
         return this;
     }
 
     /**
-     * Adds an end-branch inline comment using `#`.
-     * Printed as: } #comment
-     * <pre>
-     * .endCommentHash(" Text") -> } # Text
-     * .endCommentHash("No")    -> } #No
-     * </pre>
+     * Adds an inline `#` comment after `}`.
+     * Appears as: `} #comment`
+     *
+     * @param text comment content
+     * @return this builder
      */
-    public NodeBuilder endCommentHash(String text) {
+    public @NotNull NodeBuilder branchEndCommentHash(@NotNull String text) {
         n.inlineComments.add(new Comment(CommentType.END_BRANCH, text, false));
         return this;
     }
 
     /**
-     * Inserts a blank line
+     * Inserts a blank line for formatting.
+     *
+     * @return this builder
      */
-    public NodeBuilder emptyLine() {
+    public @NotNull NodeBuilder emptyLine() {
         n.order.add(new Entry(EntryType.EMPTY_LINE, ""));
         return this;
     }
 
-    public Node build() {
+    /**
+     * Builds the final {@link Node}.
+     *
+     * @return constructed node
+     */
+    public @NotNull Node build() {
         return n;
     }
 }
