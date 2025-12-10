@@ -7,27 +7,43 @@ import net.vansen.versa.node.Value;
  */
 public enum ValueType {
 
-    /** 32-bit integer*/
+    /**
+     * 32-bit integer
+     */
     INT,
 
-    /** 64-bit integer */
+    /**
+     * 64-bit integer
+     */
     LONG,
 
-    /** Floating number stored internally as double but returned as float */
+    /**
+     * Floating number stored internally as double but returned as float
+     */
     FLOAT,
 
-    /** Full double precision numeric value */
+    /**
+     * Full double precision numeric value
+     */
     DOUBLE,
 
-    /** Quoted or raw text value (example: "hello") */
+    /**
+     * Quoted or raw text value (example: "hello")
+     */
     STRING,
 
-    /** Boolean value, represented internally as 1/0 */
+    /**
+     * Boolean value, represented internally as 1/0
+     */
     BOOL,
 
-    /** Regular list containing {@link Value} elements */
+    /**
+     * Regular list containing {@link Value} elements
+     */
     LIST,
 
-    /** List containing embedded config branches ({ ... }) */
+    /**
+     * List containing embedded config branches ({ ... })
+     */
     LIST_OF_BRANCHES
 }

@@ -34,8 +34,8 @@ import java.util.function.Consumer;
 public class VersaParser {
     private final String[] lines;
     private final Deque<Node> stack = new ArrayDeque<>();
-    private boolean strict = true;
     public Consumer<String> errorHandler = System.out::println;
+    private boolean strict = true;
     private int ln;
 
     /**
@@ -51,12 +51,27 @@ public class VersaParser {
     /**
      * Creates a Versa parser with optional strict behavior.
      *
-     * @param s configuration text
+     * @param s      configuration text
      * @param strict whether to throw errors instead of logging them
      */
     public VersaParser(@NotNull String s, boolean strict) {
         this(s);
         this.strict = strict;
+    }
+
+    private static String[] split(String s) {
+        int len = s.length(), count = 1;
+        for (int i = 0; i < len; i++) if (s.charAt(i) == '\n') count++;
+        String[] r = new String[count];
+        int p = 0, start = 0;
+        for (int i = 0; i < len; i++) {
+            if (s.charAt(i) == '\n') {
+                r[p++] = s.substring(start, i);
+                start = i + 1;
+            }
+        }
+        r[p] = start < len ? s.substring(start) : "";
+        return r;
     }
 
     /**
@@ -331,21 +346,6 @@ public class VersaParser {
         s = s.trim();
         if (s.startsWith("\"") && s.endsWith("\"") && s.length() >= 2) return s.substring(1, s.length() - 1);
         return s;
-    }
-
-    private static String[] split(String s) {
-        int len = s.length(), count = 1;
-        for (int i = 0; i < len; i++) if (s.charAt(i) == '\n') count++;
-        String[] r = new String[count];
-        int p = 0, start = 0;
-        for (int i = 0; i < len; i++) {
-            if (s.charAt(i) == '\n') {
-                r[p++] = s.substring(start, i);
-                start = i + 1;
-            }
-        }
-        r[p] = start < len ? s.substring(start) : "";
-        return r;
     }
 
     private String stripInlineComment(String s) {

@@ -8,15 +8,23 @@ import net.vansen.versa.node.Node;
  */
 public enum EntryType {
 
-    /** A key-value entry (example: {@code host = "localhost"}) */
+    /**
+     * A key-value entry (example: {@code host = "localhost"})
+     */
     VALUE,
 
-    /** A nested config branch (example: {@code database { ... }}) */
+    /**
+     * A nested config branch (example: {@code database { ... }})
+     */
     BRANCH,
 
-    /** A blank visual separator, printed as an empty line */
+    /**
+     * A blank visual separator, printed as an empty line
+     */
     EMPTY_LINE,
 
-    /** A standalone line comment (`// comment` or `# comment`) */
+    /**
+     * A standalone line comment (`// comment` or `# comment`)
+     */
     COMMENT
 }

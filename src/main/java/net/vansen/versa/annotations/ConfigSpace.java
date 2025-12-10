@@ -17,7 +17,7 @@ import java.lang.annotation.Target;
  * @ConfigSpace(after = true)         // blank line below
  * public static int timeout = 60;
  * }</pre>
- *
+ * <p>
  * Output:
  * <pre>
  *

@@ -21,7 +21,7 @@ import java.lang.annotation.Target;
  * @ConfigComment(value="Local bind address", inline=true)
  * public static String host = "127.0.0.1";
  * }</pre>
- *
+ * <p>
  * Output:
  * <pre>
  * # Listening port

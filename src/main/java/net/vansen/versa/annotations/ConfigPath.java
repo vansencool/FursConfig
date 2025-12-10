@@ -27,7 +27,7 @@ import java.lang.annotation.Target;
  *     }
  * }
  * }</pre>
- *
+ * <p>
  * Output:
  * <pre>
  * server {

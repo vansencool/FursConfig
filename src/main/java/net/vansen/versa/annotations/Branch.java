@@ -1,6 +1,9 @@
 package net.vansen.versa.annotations;
 
-import java.lang.annotation.*;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * Marks a field as a configuration **branch**, meaning its type
@@ -23,7 +26,7 @@ import java.lang.annotation.*;
  *     }
  * }
  * }</pre>
- *
+ * <p>
  * Produces:
  * <pre>
  * server {
@@ -34,4 +37,5 @@ import java.lang.annotation.*;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface Branch {}
+public @interface Branch {
+}

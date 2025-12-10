@@ -9,20 +9,26 @@ import org.jetbrains.annotations.Nullable;
  */
 public class Comment {
 
-    /** Comment category such as inline, branch start/end or standalone line. */
+    /**
+     * Comment category such as inline, branch start/end or standalone line.
+     */
     public CommentType type;
 
-    /** Raw comment text content without prefix symbols. */
+    /**
+     * Raw comment text content without prefix symbols.
+     */
     public String text;
 
-    /** True = print using //, false = print using # */
+    /**
+     * True = print using //, false = print using #
+     */
     public boolean slash;
 
     /**
      * Creates a comment defaulting to // format.
      *
-     * @param t   type of comment
-     * @param s   comment text (nullable for empty/omitted)
+     * @param t type of comment
+     * @param s comment text (nullable for empty/omitted)
      */
     public Comment(@NotNull CommentType t, @Nullable String s) {
         type = t;
@@ -33,9 +39,9 @@ public class Comment {
     /**
      * Creates a comment with explicit prefix format.
      *
-     * @param t   type of comment
-     * @param s   comment text (nullable for empty/omitted)
-     * @param sl  true = use // prefix, false = use #
+     * @param t  type of comment
+     * @param s  comment text (nullable for empty/omitted)
+     * @param sl true = use // prefix, false = use #
      */
     public Comment(@NotNull CommentType t, @Nullable String s, boolean sl) {
         type = t;

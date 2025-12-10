@@ -14,15 +14,23 @@ package net.vansen.versa.comments;
  */
 public enum CommentType {
 
-    /** Inline comment printed after a value */
+    /**
+     * Inline comment printed after a value
+     */
     INLINE_VALUE,
 
-    /** Inline comment placed after an opening { */
+    /**
+     * Inline comment placed after an opening {
+     */
     START_BRANCH,
 
-    /** Inline comment placed after a closing } */
+    /**
+     * Inline comment placed after a closing }
+     */
     END_BRANCH,
 
-    /** A standalone comment line */
+    /**
+     * A standalone comment line
+     */
     COMMENT_LINE
 }

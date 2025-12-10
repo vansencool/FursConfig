@@ -343,12 +343,17 @@ public final class ConfigLoader {
             Object def = defaults.get(f);
             Class<?> type = f.getType();
             ConfigAdapter<?> adType = Adapters.get(type);
+            ConfigSpace sp = f.getAnnotation(ConfigSpace.class);
 
             if (adType != null && cp != null) {
                 String key = cp.value();
+                if (sp != null && sp.before()) root.before(key).emptyLine();
+
                 NodeBuilder nb = new NodeBuilder().name(key);
                 ((ConfigAdapter<Object>) adType).toNode(def, nb);
                 root.child(nb);
+
+                if (sp != null && sp.after()) root.after(key).emptyLine();
                 continue;
             }
 
@@ -358,9 +363,12 @@ public final class ConfigLoader {
             }
 
             String path = cp.value();
+
             if (List.class.isAssignableFrom(type)) {
                 if (def == null) def = List.of();
+                if (sp != null && sp.before()) root.before(path).emptyLine();
                 writeListValue(root, path, f, def);
+                if (sp != null && sp.after()) root.after(path).emptyLine();
             } else if (def != null) {
                 writeScalarValue(root, path, f, def);
             }
@@ -389,8 +397,11 @@ public final class ConfigLoader {
 
         Object instance = defaults.get(branchField);
         if (instance == null) {
-            try { instance = branchType.getDeclaredConstructor().newInstance(); }
-            catch (Throwable e) { throw new RuntimeException(e); }
+            try {
+                instance = branchType.getDeclaredConstructor().newInstance();
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
         }
 
         injectBranchDefaults(nb, branchType, instance);

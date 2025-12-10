@@ -21,7 +21,7 @@ import java.lang.annotation.Target;
  *     @ConfigPath("port") public int port = 25565;
  * }
  * }</pre>
- *
+ * <p>
  * Output:
  * <pre>
  *

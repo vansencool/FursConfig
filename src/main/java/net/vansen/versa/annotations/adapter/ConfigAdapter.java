@@ -34,7 +34,7 @@ public interface ConfigAdapter<T> {
     /**
      * Writes an object into builder form for saving/serialization.
      *
-     * @param value object to serialize into config form
+     * @param value   object to serialize into config form
      * @param builder node builder to write into
      */
     void toNode(@NotNull T value, @NotNull NodeBuilder builder);

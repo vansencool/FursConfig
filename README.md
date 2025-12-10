@@ -41,7 +41,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.github.vansencool:Versa:2.2.1'
+    implementation 'com.github.vansencool:Versa:2.2.5'
 }
 ```
 
@@ -60,7 +60,7 @@ dependencies {
 <dependency>
     <groupId>com.github.vansencool</groupId>
     <artifactId>Versa</artifactId>
-    <version>2.2.1</version>
+    <version>2.2.5</version>
 </dependency>
 ```
 
@@ -169,6 +169,107 @@ database { // Connection settings
     }
 }
 ```
+
+---
+
+## Object Binding & Adapters Example
+
+Bind config files directly to Java classes.
+Supports branches, nested objects, lists, and custom serialized types.
+
+### Example configuration class
+
+```java
+@ConfigFile("config.versa")
+public static class AppConfig {
+
+    @ConfigPath("name")
+    public static String name = "VersaApp";
+
+    @ConfigPath("debug")
+    @ConfigSpace
+    public static boolean debug = false;
+
+    @ConfigPath("tags")
+    @ConfigSpace
+    public static List<String> tags = List.of("fast", "simple", "clean");
+
+    @ConfigPath("maintenance_window")
+    public static Duration maintenance = Duration.ofMinutes(30);
+
+    @Branch
+    @ConfigPath("database")
+    public static Database database = new Database();
+
+    @ConfigBranchSpace(before = true)
+    public static class Database {
+
+        @ConfigPath("host")
+        public String host = "localhost";
+
+        @ConfigPath("port")
+        public int port = 3306;
+
+        @Branch
+        @ConfigPath("auth")
+        public Auth auth = new Auth();
+
+        @ConfigBranchSpace(before = true)
+        public static class Auth {
+            @ConfigPath("user") public String user = "admin";
+            @ConfigPath("password") public String pass = "secret";
+        }
+    }
+}
+```
+
+### Duration Adapter
+
+```java
+public static class DurationAdapter implements ConfigAdapter<Duration> {
+    public @NotNull Duration fromNode(@NotNull Node node) {
+        return Duration.ofMinutes(node.getInteger("minutes"));
+    }
+
+    public void toNode(Duration value, NodeBuilder builder) {
+        builder.add(new ValueBuilder().name("minutes").intVal((int) value.toMinutes()));
+    }
+}
+```
+
+Output:
+
+```hocon
+name = "VersaApp"
+debug = false
+
+tags = ["fast", "simple", "clean"]
+
+maintenance_window {
+    minutes = 30
+}
+
+database {
+    host = "localhost"
+    port = 3306
+
+    auth {
+        user = "admin"
+        password = "secret"
+    }
+}
+```
+
+### What the annotations do
+
+| Annotation                         | Meaning                                                 |
+| ---------------------------------- | ------------------------------------------------------- |
+| `@ConfigFile("config.versa")`      | Binds this class to a config file on disk.              |
+| `@ConfigPath("name")`              | Maps a field to a config key with that path.            |
+| `@ConfigSpace`                     | Preserves spacing around values when saving.            |
+| `@Branch`                          | Marks a class as a nested config section.               |
+| `@ConfigBranchSpace(before/after)` | Adds blank lines for readability.                       |
+| `ConfigAdapter`                    | Converts a complex type (like Duration) to/from config. |
 
 ---
 

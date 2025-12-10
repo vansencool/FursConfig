@@ -8,10 +8,14 @@ import net.vansen.versa.node.Node;
  */
 public class Entry {
 
-    /** Type of element (value, branch, comment or blank line) */
+    /**
+     * Type of element (value, branch, comment or blank line)
+     */
     public EntryType t;
 
-    /** The object associated with this entry — varies depending on {@link #t} */
+    /**
+     * The object associated with this entry — varies depending on {@link #t}
+     */
     public Object o;
 
     /**

@@ -21,7 +21,7 @@ import java.lang.annotation.Target;
  *     @ConfigPath("pass") public String pass = "1234";
  * }
  * }</pre>
- *
+ * <p>
  * Result:
  * <pre>
  * database {  # Database section
